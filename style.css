@@ -1678,3 +1678,24 @@ body {
 .micro-bounce:hover {
     animation: microBounce 0.3s ease;
 }
+/* ЭКСТРЕННЫЙ ФИКС СКРОЛЛА */
+#fittingProducts {
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    pointer-events: auto !important;
+}
+
+/* Принудительное создание контента для скролла */
+.fitting-products::after {
+    content: '';
+    display: block;
+    height: 1px;
+}
+
+/* Гарантированный скролл на мобильных */
+@media (max-width: 768px) {
+    .fitting-products {
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+}
