@@ -4,166 +4,180 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FashionHub - Магазин одежды</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        
-        .logo {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        
-        .welcome-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            color: #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-        }
-        
-        .product-grid {
-            display: grid;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            padding: 15px;
-            text-align: left;
-            color: #333;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .product-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .product-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .product-price {
-            color: #667eea;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin: 5px 0;
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid white;
-            color: white;
-        }
-        
-        .contact-info {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 15px;
-            margin: 15px 0;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">FashionHub</div>
-        
-        <div class="welcome-card">
-            <h2>🛍️ Добро пожаловать!</h2>
-            <p>Магазин модной одежды в Telegram</p>
-            
-            <div class="product-grid">
-                <div class="product-card">
-                    <img src="https://img.freepik.com/free-photo/plain-white-t-shirt_125540-908.jpg" 
-                         alt="Футболка" class="product-image">
-                    <div class="product-title">Белая футболка</div>
-                    <div class="product-price">2 499 ₽</div>
+    <div id="app">
+        <!-- Загрузка -->
+        <div id="loading" class="loading-screen">
+            <div class="loader">
+                <div class="loader-spinner"></div>
+                <p>Загружаем модные новинки...</p>
+            </div>
+        </div>
+
+        <!-- Главный интерфейс -->
+        <div id="main-app" class="main-app hidden">
+            <!-- Хедер -->
+            <header class="app-header">
+                <div class="header-content">
+                    <h1 class="logo">FashionHub</h1>
+                    <div class="header-actions">
+                        <button class="icon-btn search-btn" id="searchBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" 
+                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn cart-btn" id="cartBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.5 5.2 16.5H17M17 13V16.5M9 19.5C9 20.328 8.328 21 7.5 21C6.672 21 6 20.328 6 19.5C6 18.672 6.672 18 7.5 18C8.328 18 9 18.672 9 19.5ZM18 19.5C18 20.328 17.328 21 16.5 21C15.672 21 15 20.328 15 19.5C15 18.672 15.672 18 16.5 18C17.328 18 18 18.672 18 19.5Z" 
+                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span class="cart-badge" id="cartBadge">0</span>
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="product-card">
-                    <img src="https://img.freepik.com/free-photo/blue-jeans-isolated-white_125540-1290.jpg" 
-                         alt="Джинсы" class="product-image">
-                    <div class="product-title">Синие джинсы</div>
-                    <div class="product-price">4 599 ₽</div>
+                <!-- Поиск -->
+                <div class="search-container hidden" id="searchContainer">
+                    <input type="text" id="searchInput" placeholder="Поиск товаров..." class="search-input">
+                    <button class="search-close" id="searchClose">✕</button>
+                </div>
+
+                <!-- Навигация -->
+                <nav class="categories-nav">
+                    <div class="categories-scroll">
+                        <button class="category-btn active" data-category="all">Все</button>
+                        <button class="category-btn" data-category="new">Новинки</button>
+                        <button class="category-btn" data-category="tops">Верх</button>
+                        <button class="category-btn" data-category="bottoms">Низ</button>
+                        <button class="category-btn" data-category="dresses">Платья</button>
+                        <button class="category-btn" data-category="outerwear">Верхняя</button>
+                        <button class="category-btn" data-category="shoes">Обувь</button>
+                        <button class="category-btn" data-category="accessories">Аксессуары</button>
+                    </div>
+                </nav>
+            </header>
+
+            <!-- Основной контент -->
+            <main class="app-main">
+                <!-- Сетка товаров -->
+                <div class="products-grid" id="productsGrid">
+                    <!-- Товары загружаются через JavaScript -->
+                </div>
+
+                <!-- Пустое состояние -->
+                <div class="empty-state hidden" id="emptyState">
+                    <div class="empty-icon">🛍️</div>
+                    <h3>Товары не найдены</h3>
+                    <p>Попробуйте изменить параметры поиска</p>
+                </div>
+            </main>
+
+            <!-- Нижняя навигация -->
+            <nav class="bottom-nav">
+                <button class="nav-item active" data-page="catalog">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Главная</span>
+                </button>
+                <button class="nav-item" data-page="fitting">
+                    <span class="nav-icon">👗</span>
+                    <span class="nav-label">Примерочная</span>
+                </button>
+                <button class="nav-item" data-page="favorites">
+                    <span class="nav-icon">❤️</span>
+                    <span class="nav-label">Избранное</span>
+                </button>
+                <button class="nav-item" data-page="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Профиль</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Модальное окно товара -->
+        <div class="modal-overlay hidden" id="productModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="modal-close" id="modalClose">✕</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Контент модального окна -->
                 </div>
             </div>
-            
-            <button class="btn" onclick="orderProduct()">📞 Заказать товар</button>
-            <button class="btn" onclick="showContacts()">📞 Контакты</button>
         </div>
-        
-        <div class="contact-info" id="contacts" style="display: none;">
-            <h3>📞 Контакты</h3>
-            <p>Менеджер: @fashionhub_manager</p>
-            <p>Телефон: +7 (999) 123-45-67</p>
-            <p>Доставка по всей России</p>
+
+        <!-- Боковая панель корзины -->
+        <div class="sidebar-overlay hidden" id="cartSidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-header">
+                    <h3>Корзина</h3>
+                    <button class="sidebar-close" id="cartClose">✕</button>
+                </div>
+                <div class="sidebar-body" id="cartItems">
+                    <!-- Товары в корзине -->
+                </div>
+                <div class="sidebar-footer">
+                    <div class="cart-total">
+                        <span>Итого:</span>
+                        <span id="cartTotalPrice">0 ₽</span>
+                    </div>
+                    <button class="checkout-btn" id="checkoutBtn">
+                        Оформить заказ
+                    </button>
+                </div>
+            </div>
         </div>
-        
-        <button class="btn btn-secondary" onclick="closeApp()">Закрыть приложение</button>
+
+        <!-- Виртуальная примерочная -->
+        <div class="fitting-room-overlay hidden" id="fittingRoom">
+            <div class="fitting-container">
+                <div class="fitting-header">
+                    <button class="fitting-back" id="fittingBack">← Назад</button>
+                    <h2>Виртуальная примерочная</h2>
+                    <button class="fitting-reset" id="fittingReset">🔄 Сброс</button>
+                </div>
+                
+                <div class="fitting-content">
+                    <!-- Модель -->
+                    <div class="model-section">
+                        <div class="model-view" id="modelView">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400" 
+                                 alt="Модель" class="model-base" id="modelBase">
+                            <!-- Наложения товаров -->
+                            <div class="product-layer top-layer" id="topLayer"></div>
+                            <div class="product-layer bottom-layer" id="bottomLayer"></div>
+                            <div class="product-layer dress-layer" id="dressLayer"></div>
+                            <div class="product-layer shoes-layer" id="shoesLayer"></div>
+                        </div>
+                        
+                        <div class="model-controls">
+                            <button class="model-btn" id="changeModel">👩 Сменить модель</button>
+                            <button class="model-btn" id="saveOutfit">💾 Сохранить образ</button>
+                        </div>
+                    </div>
+
+                    <!-- Категории товаров для примерки -->
+                    <div class="fitting-categories">
+                        <div class="category-tabs">
+                            <button class="tab-btn active" data-category="tops">👚 Верх</button>
+                            <button class="tab-btn" data-category="bottoms">👖 Низ</button>
+                            <button class="tab-btn" data-category="dresses">👗 Платья</button>
+                            <button class="tab-btn" data-category="shoes">👟 Обувь</button>
+                        </div>
+                        
+                        <div class="fitting-products" id="fittingProducts">
+                            <!-- Товары для примерки -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // Инициализация Telegram Web App
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.enableClosingConfirmation();
-        
-        function orderProduct() {
-            tg.showAlert("Для заказа напишите @fashionhub_manager в Telegram");
-        }
-        
-        function showContacts() {
-            document.getElementById('contacts').style.display = 'block';
-        }
-        
-        function closeApp() {
-            tg.close();
-        }
-        
-        // Получаем данные от бота
-        tg.ready();
-        tg.MainButton.setText("Открыть каталог").show();
-        tg.MainButton.onClick(() => {
-            tg.showAlert("Полный каталог скоро будет доступен!");
-        });
-    </script>
+    <script src="data/products.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
