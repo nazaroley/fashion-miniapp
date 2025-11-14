@@ -34,7 +34,7 @@
         <header class="app-header">
             <div class="header-content">
                 <div class="logo-container">
-                    <img src="logo.png" alt="FashionHub" class="logo-img">
+                    <img src="https://placehold.co/32x32/8b5cf6/ffffff?text=WS" alt="WEAR SIDE" class="logo-img">
                     <h1 class="logo">WEAR SIDE | SHOP</h1>
                 </div>
                 <div class="header-actions">
@@ -223,7 +223,7 @@
                 <div class="admin-tab-content active" id="adminProducts">
                     <div class="admin-section">
                         <h3>Управление товарами</h3>
-                        <div class="products-list" id="adminProductsList">
+                        <div class="admin-products-list" id="adminProductsList">
                             <!-- Список товаров -->
                         </div>
                     </div>
@@ -232,30 +232,30 @@
                 <div class="admin-tab-content" id="adminAdd">
                     <div class="admin-section">
                         <h3>Добавить новый товар</h3>
-                        <form class="product-form" id="productForm">
+                        <form class="admin-form" id="productForm">
                             <div class="form-group">
-                                <label class="form-label">Название товара *</label>
+                                <label for="productName" class="form-label">Название товара *</label>
                                 <input type="text" id="productName" required class="form-input" placeholder="Например: Белая футболка Oversize">
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Описание *</label>
+                                <label for="productDescription" class="form-label">Описание *</label>
                                 <textarea id="productDescription" required class="form-textarea" placeholder="Описание товара..."></textarea>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Цена (₽) *</label>
+                                    <label for="productPrice" class="form-label">Цена (₽) *</label>
                                     <input type="number" id="productPrice" required class="form-input" placeholder="2499">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Старая цена (₽)</label>
+                                    <label for="productOldPrice" class="form-label">Старая цена (₽)</label>
                                     <input type="number" id="productOldPrice" class="form-input" placeholder="2999">
                                 </div>
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Категория *</label>
+                                <label for="productCategory" class="form-label">Категория *</label>
                                 <select id="productCategory" required class="form-select">
                                     <option value="">Выберите категорию</option>
                                     <option value="tops">Футболки</option>
@@ -276,7 +276,7 @@
                                     </div>
                                     <div class="image-preview hidden" id="imagePreview">
                                         <img id="previewImage" src="" alt="Preview">
-                                        <button type="button" class="remove-image" onclick="app.removeImage()">✕</button>
+                                        <button type="button" class="remove-image" id="removeImageBtn">✕</button>
                                     </div>
                                 </div>
                             </div>
@@ -292,18 +292,18 @@
                                     </div>
                                     <div class="image-preview hidden" id="modelImagePreview">
                                         <img id="previewModelImage" src="" alt="Model Preview">
-                                        <button type="button" class="remove-image" onclick="app.removeModelImage()">✕</button>
+                                        <button type="button" class="remove-image" id="removeModelImageBtn">✕</button>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label class="form-label">Размеры (через запятую) *</label>
+                                    <label for="productSizes" class="form-label">Размеры (через запятую) *</label>
                                     <input type="text" id="productSizes" required class="form-input" placeholder="S, M, L, XL">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Цвета (через запятую) *</label>
+                                    <label for="productColors" class="form-label">Цвета (через запятую) *</label>
                                     <input type="text" id="productColors" required class="form-input" placeholder="Белый, Черный, Синий">
                                 </div>
                             </div>
@@ -321,8 +321,8 @@
                             </div>
 
                             <div class="form-actions">
-                                <button type="button" class="btn-secondary" onclick="app.hideAdminPanel()">Отмена</button>
-                                <button type="submit" class="btn-primary">Добавить товар</button>
+                                <button type="button" class="btn btn-secondary" onclick="app.hideAdminPanel()">Отмена</button>
+                                <button type="submit" class="btn btn-primary">Добавить товар</button>
                             </div>
                         </form>
                     </div>
