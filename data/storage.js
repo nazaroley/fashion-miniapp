@@ -1,3 +1,31 @@
+// storage.js - ДОБАВЬТЕ ЭТО В САМОЕ НАЧАЛО
+console.log('Storage loading, BASE_PRODUCTS:', typeof BASE_PRODUCTS);
+
+// Защита от отсутствия BASE_PRODUCTS
+if (typeof BASE_PRODUCTS === 'undefined') {
+    console.error('❌ BASE_PRODUCTS не загружен!');
+    var BASE_PRODUCTS = {
+        products: [
+            {
+                id: 1,
+                name: "Аварийный товар",
+                price: 1000,
+                category: "tops",
+                images: ["https://via.placeholder.com/300"],
+                description: "Товар по умолчанию",
+                sizes: ["M"],
+                colors: ["Черный"],
+                material: "Хлопок",
+                care: "Стирка",
+                inStock: true
+            }
+        ],
+        categories: [],
+        adminUsers: []
+    };
+} else {
+    console.log('✅ BASE_PRODUCTS загружен успешно');
+}
 // Работа с localStorage
 const Storage = {
     // Ключи для хранения данных
