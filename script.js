@@ -821,9 +821,7 @@ class FashionApp {
         // Табы в примерочной
         document.querySelectorAll('.tab-btn').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                const category = e.target.dataset.category;
-                console.log('Tab clicked:', category);
-                this.setActiveFittingTab(category);
+                this.handleFittingTabChange(e.target.dataset.category);
             });
         });
 
@@ -1219,7 +1217,7 @@ class FashionApp {
         this.renderProducts();
     }
 
-    // 3D ПРИМЕРОЧНАЯ - ДВУХЭТАПНЫЙ ИНТЕРФЕЙС
+    // 3D ПРИМЕРОЧНАЯ - ИСПРАВЛЕННЫЙ ВЫБОР ВЕЩЕЙ
     openFittingRoom(productId = null) {
         this.showFittingRoom();
         this.showFittingSelection();
@@ -1242,6 +1240,7 @@ class FashionApp {
         
         this.renderSelectedItems();
         this.setActiveFittingTab('tops');
+        this.updateProceedButton();
     }
 
     showFittingSelection() {
@@ -1253,10 +1252,10 @@ class FashionApp {
         // Проверяем, есть ли выбранные вещи
         const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
         if (!hasItems) {
-            this.showAlert('Сначала выберите вещи для примерки!');
+            this.showAlert('Выберите хотя бы одну вещь для примерки');
             return;
         }
-        
+
         document.getElementById('fittingSelection').classList.add('hidden');
         document.getElementById('fittingView').classList.remove('hidden');
         
@@ -1272,9 +1271,15 @@ class FashionApp {
         this.renderOutfitItems();
     }
 
+    // ИСПРАВЛЕННЫЙ МЕТОД - добавление товара в примерку
     addToFitting(product) {
+        if (!product || !product.fitting) {
+            console.error('Invalid product:', product);
+            return;
+        }
+
         const category = product.fitting.type;
-        console.log('Adding to fitting:', product.name, 'category:', category);
+        console.log('Adding to fitting:', product.name, 'Category:', category);
         
         // Для платьев снимаем верх и низ
         if (category === 'dresses') {
@@ -1286,16 +1291,20 @@ class FashionApp {
             this.state.currentOutfit.dresses = null;
         }
         
-        // Если уже есть вещь этой категории - заменяем, иначе добавляем
-        this.state.currentOutfit[category] = product;
-        
+        // Если товар уже выбран, снимаем его, иначе добавляем
+        if (this.state.currentOutfit[category]?.id === product.id) {
+            this.state.currentOutfit[category] = null;
+        } else {
+            this.state.currentOutfit[category] = product;
+        }
+
         this.renderSelectedItems();
         this.updateProceedButton();
         
         // Обновляем отображение товаров в активной вкладке
-        const activeTab = document.querySelector('.tab-btn.active')?.dataset.category;
+        const activeTab = document.querySelector('.tab-btn.active');
         if (activeTab) {
-            this.renderFittingProducts(activeTab);
+            this.renderFittingProducts(activeTab.dataset.category);
         }
     }
 
@@ -1304,515 +1313,528 @@ class FashionApp {
         this.renderSelectedItems();
         this.updateProceedButton();
         
-        // Обновляем 3D сцену если она активна
-        if (this.threeFittingRoom && document.getElementById('fittingView').classList.contains('hidden') === false) {
-            this.threeFittingRoom.removeClothing(category);
+        // Обновляем отображение товаров в активной вкладке
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab) {
+            this.renderFittingProducts(activeTab.dataset.category);
         }
-    }
-
-    setActiveFittingTab(category) {
-        console.log('Setting active tab:', category);
-        
-        // Обновляем активную вкладку
-        document.querySelectorAll('.tab-btn').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.category === category);
-        });
-
-        // Показываем соответствующий контент
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.toggle('active', content.dataset.category === category);
-        });
-
-        this.renderFittingProducts(category);
-    }
-
-    renderFittingProducts(category) {
-        const container = document.getElementById(`fittingProducts-${category}`);
-        if (!container) return;
-
-        const products = this.state.products.filter(p => p.fitting.type === category);
-        
-        if (products.length === 0) {
-            container.innerHTML = `
-                <div class="empty-fitting">
-                    <p>Товары этой категории появятся скоро</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = products.map(product => {
-            const isSelected = this.state.currentOutfit[category]?.id === product.id;
-            
-            return `
-                <div class="fitting-product-card ${isSelected ? 'selected' : ''}" 
-                     onclick="app.addToFitting(${product.id})">
-                    <img src="${product.images[0]}" alt="${product.name}" 
-                         class="fitting-product-image"
-                         onerror="this.src='https://placehold.co/200x200/64748b/ffffff?text=Image+Error'">
-                    <div class="fitting-product-info">
-                        <h4 class="fitting-product-name">${product.name}</h4>
-                        <p class="fitting-product-price">${product.price.toLocaleString()} ₽</p>
-                        ${isSelected ? '<div class="selected-badge">✓ Выбрано</div>' : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
 
     renderSelectedItems() {
-        const container = document.getElementById('selectedItems');
+        const container = document.getElementById('selectedItemsList');
         if (!container) return;
 
         const selectedItems = Object.entries(this.state.currentOutfit)
             .filter(([_, product]) => product !== null)
-            .map(([category, product]) => ({
-                category,
-                product
-            }));
+            .map(([category, product]) => ({ category, product }));
 
         if (selectedItems.length === 0) {
-            container.innerHTML = `
-                <div class="no-selected-items">
-                    <p>Выберите вещи для примерки</p>
-                </div>
-            `;
+            container.innerHTML = '<div class="empty-selection">Выберите вещи для примерки</div>';
             return;
         }
 
         container.innerHTML = selectedItems.map(({ category, product }) => `
             <div class="selected-item">
                 <img src="${product.images[0]}" alt="${product.name}" 
-                     class="selected-item-image"
-                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=Image+Error'">
-                <div class="selected-item-info">
-                    <span class="selected-item-name">${product.name}</span>
-                    <span class="selected-item-category">${this.getCategoryName(category)}</span>
-                </div>
-                <button class="remove-selected-btn" 
-                        onclick="app.removeFromFitting('${category}')">✕</button>
+                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=IMG'">
+                <span>${this.getCategoryName(category)}: ${product.name}</span>
+                <button class="remove-item" onclick="app.removeFromFitting('${category}')">✕</button>
             </div>
         `).join('');
-    }
-
-    getCategoryName(category) {
-        const names = {
-            'tops': 'Верх',
-            'bottoms': 'Низ', 
-            'dresses': 'Платье',
-            'shoes': 'Обувь'
-        };
-        return names[category] || category;
-    }
-
-    updateProceedButton() {
-        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
-        const proceedBtn = document.getElementById('fittingProceed');
-        
-        if (proceedBtn) {
-            proceedBtn.disabled = !hasItems;
-            proceedBtn.style.opacity = hasItems ? '1' : '0.5';
-        }
-    }
-
-    applyOutfitTo3D() {
-        if (!this.threeFittingRoom) return;
-
-        // Сбрасываем текущий наряд
-        this.threeFittingRoom.reset();
-
-        // Добавляем каждую вещь в 3D сцену
-        Object.entries(this.state.currentOutfit).forEach(([category, product]) => {
-            if (product && product.modelImages && product.modelImages[0]) {
-                this.threeFittingRoom.addClothing(
-                    category, 
-                    product.modelImages[0],
-                    product.name
-                );
-            }
-        });
-    }
-
-    resetFitting() {
-        this.state.currentOutfit = {
-            tops: null,
-            bottoms: null,
-            dresses: null, 
-            shoes: null
-        };
-        
-        this.renderSelectedItems();
-        this.updateProceedButton();
-        
-        if (this.threeFittingRoom) {
-            this.threeFittingRoom.reset();
-        }
-        
-        // Возвращаем к выбору вещей
-        this.showFittingSelection();
-    }
-
-    toggleRotation() {
-        if (this.threeFittingRoom) {
-            const isRotating = this.threeFittingRoom.toggleRotation();
-            const rotationBtn = document.getElementById('toggleRotation');
-            if (rotationBtn) {
-                rotationBtn.textContent = isRotating ? '⏸️ Стоп' : '🔄 Вращение';
-            }
-        }
-    }
-
-    changeModel() {
-        this.state.currentModel = this.state.currentModel === 'female' ? 'male' : 'female';
-        
-        // В реальном приложении здесь была бы смена 3D модели
-        if (this.threeFittingRoom) {
-            this.threeFittingRoom.reset();
-            this.applyOutfitTo3D();
-        }
-        
-        this.showAlert(`Модель изменена на: ${this.state.currentModel === 'female' ? 'Женская' : 'Мужская'}`);
-    }
-
-    saveOutfit() {
-        const outfit = {
-            items: this.state.currentOutfit,
-            createdAt: new Date().toISOString(),
-            total: Object.values(this.state.currentOutfit)
-                .filter(item => item !== null)
-                .reduce((sum, item) => sum + item.price, 0)
-        };
-        
-        // Сохраняем в localStorage
-        const savedOutfits = JSON.parse(localStorage.getItem('fashionhub_outfits') || '[]');
-        savedOutfits.push(outfit);
-        localStorage.setItem('fashionhub_outfits', JSON.stringify(savedOutfits));
-        
-        this.showAlert('Набор сохранен! 💾');
     }
 
     renderOutfitItems() {
         const container = document.getElementById('outfitItems');
         if (!container) return;
 
-        const items = Object.values(this.state.currentOutfit).filter(item => item !== null);
-        
-        container.innerHTML = items.map(product => `
-            <div class="outfit-item-card">
-                <img src="${product.images[0]}" alt="${product.name}" 
-                     class="outfit-item-image"
-                     onerror="this.src='https://placehold.co/80x80/64748b/ffffff?text=Image+Error'">
-                <div class="outfit-item-info">
-                    <span class="outfit-item-name">${product.name}</span>
-                    <span class="outfit-item-price">${product.price.toLocaleString()} ₽</span>
-                </div>
-            </div>
-        `).join('');
+        const outfitItems = Object.entries(this.state.currentOutfit)
+            .filter(([_, product]) => product !== null)
+            .map(([category, product]) => ({ category, product }));
 
-        const total = items.reduce((sum, item) => sum + item.price, 0);
-        const totalElement = document.getElementById('outfitTotal');
-        if (totalElement) {
-            totalElement.textContent = `Общая стоимость: ${total.toLocaleString()} ₽`;
-        }
-    }
-
-    // АДМИН ПАНЕЛЬ
-    showAdminPanel() {
-        // Проверяем права администратора
-        const userId = this.tg.initDataUnsafe.user?.id;
-        if (!BASE_PRODUCTS.adminUsers.includes(userId)) {
-            this.showAlert('У вас нет прав доступа к админ панели');
+        if (outfitItems.length === 0) {
+            container.innerHTML = '<div class="empty-selection">Нет выбранных вещей</div>';
             return;
         }
 
-        document.getElementById('mainApp').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-        
-        this.switchAdminTab('products');
-        this.renderAdminProducts();
-        this.renderAdminOrders();
-    }
-
-    hideAdminPanel() {
-        document.getElementById('adminPanel').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-    }
-
-    switchAdminTab(tabName) {
-        // Обновляем активную вкладку
-        document.querySelectorAll('.admin-tab-btn').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.tab === tabName);
-        });
-
-        // Показываем соответствующий контент
-        document.querySelectorAll('.admin-tab-content').forEach(content => {
-            content.classList.toggle('active', content.dataset.tab === tabName);
-        });
-    }
-
-    renderAdminProducts() {
-        const container = document.getElementById('adminProductsList');
-        if (!container) return;
-
-        container.innerHTML = this.state.products.map(product => `
-            <div class="admin-product-card">
+        container.innerHTML = outfitItems.map(({ category, product }) => `
+            <div class="outfit-item">
                 <img src="${product.images[0]}" alt="${product.name}" 
-                     class="admin-product-image"
-                     onerror="this.src='https://placehold.co/100x100/64748b/ffffff?text=Image+Error'">
-                <div class="admin-product-info">
-                    <h4>${product.name}</h4>
-                    <p>${product.price.toLocaleString()} ₽ • ${this.getCategoryName(product.category)}</p>
-                    <div class="admin-product-badges">
-                        ${product.isNew ? '<span class="badge">NEW</span>' : ''}
-                        ${product.isSale ? '<span class="badge">SALE</span>' : ''}
-                        ${product.inStock ? '<span class="badge">В наличии</span>' : '<span class="badge">Нет в наличии</span>'}
-                    </div>
-                </div>
-                <div class="admin-product-actions">
-                    <button class="btn-small" onclick="app.editProduct(${product.id})">✏️</button>
-                    <button class="btn-small btn-danger" onclick="app.deleteProduct(${product.id})">🗑️</button>
+                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=IMG'">
+                <div class="outfit-item-info">
+                    <div class="outfit-item-name">${product.name}</div>
+                    <div class="outfit-item-category">${this.getCategoryName(category)}</div>
                 </div>
             </div>
         `).join('');
     }
 
-    renderAdminOrders() {
+    updateProceedButton() {
+        const proceedButton = document.getElementById('fittingProceed');
+        if (!proceedButton) return;
+
+        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
+        proceedButton.disabled = !hasItems;
+        
+        if (hasItems) {
+            proceedButton.style.opacity = '1';
+            proceedButton.style.cursor = 'pointer';
+        } else {
+            proceedButton.style.opacity = '0.5';
+            proceedButton.style.cursor = 'not-allowed';
+        }
+    }
+
+    applyOutfitTo3D() {
+        if (!this.threeFittingRoom) return;
+
+        // Сбрасываем текущую одежду
+        this.threeFittingRoom.reset();
+
+        // Применяем выбранные вещи с задержками для плавности
+        Object.entries(this.state.currentOutfit).forEach(([category, product], index) => {
+            if (product && product.modelImages && product.modelImages.length > 0) {
+                setTimeout(() => {
+                    this.threeFittingRoom.addClothing(
+                        category, 
+                        product.modelImages[0],
+                        product.name
+                    );
+                }, index * 200); // Задержка между добавлением элементов
+            }
+        });
+    }
+
+    setActiveFittingTab(category) {
+        // Обновляем кнопки табов
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.category === category);
+        });
+        
+        // Рендерим товары для выбранной категории
+        this.renderFittingProducts(category);
+    }
+
+    // ИСПРАВЛЕННЫЙ МЕТОД - рендеринг товаров в примерочной
+    renderFittingProducts(category) {
+        const container = document.getElementById('fittingProducts');
+        if (!container) return;
+
+        const products = this.state.products.filter(p => 
+            p.fitting?.type === category
+        );
+
+        if (products.length === 0) {
+            container.innerHTML = `
+                <div class="fitting-empty">
+                    <div class="empty-icon">👗</div>
+                    <h3>Нет товаров для примерки</h3>
+                    <p>Добавьте товары в эту категорию</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = products.map(product => {
+            const isSelected = this.state.currentOutfit[product.fitting.type]?.id === product.id;
+            return `
+                <div class="fitting-product ${isSelected ? 'selected' : ''}" 
+                     onclick="app.addToFitting(${product.id})">
+                    <img src="${product.images[0]}" alt="${product.name}" 
+                         onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=IMG'">
+                    <div class="product-title">${product.name}</div>
+                    <div class="product-price">${product.price.toLocaleString()} ₽</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Остальные методы 3D примерочной
+    toggleRotation() {
+        if (this.threeFittingRoom) {
+            const isRotating = this.threeFittingRoom.toggleRotation();
+            const button = document.getElementById('toggleRotation');
+            if (button) {
+                button.textContent = isRotating ? '⏹️ Стоп' : '🔄 Вращение';
+                button.classList.toggle('active', isRotating);
+            }
+        }
+    }
+
+    resetFitting() {
+        if (this.threeFittingRoom) {
+            this.threeFittingRoom.reset();
+        }
+        
+        // Сбрасываем выбранные вещи
+        this.state.currentOutfit = {
+            tops: null,
+            bottoms: null,
+            dresses: null,
+            shoes: null
+        };
+        
+        this.renderSelectedItems();
+        this.renderOutfitItems();
+        this.updateProceedButton();
+    }
+
+    changeModel() {
+        if (this.threeFittingRoom && this.threeFittingRoom.model) {
+            const skinColors = [0xffdbac, 0xf1c27d, 0xe0ac69, 0xc68642, 0x8d5524];
+            const randomColor = skinColors[Math.floor(Math.random() * skinColors.length)];
+            
+            this.threeFittingRoom.model.children.forEach(child => {
+                if (child.material && child.material.color) {
+                    child.material.color.setHex(randomColor);
+                }
+            });
+        }
+    }
+
+    saveOutfit() {
+        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
+        
+        if (!hasItems) {
+            this.showAlert('Добавьте товары для сохранения образа');
+            return;
+        }
+
+        const savedOutfits = JSON.parse(localStorage.getItem('fashionhub_outfits') || '[]');
+        const newOutfit = {
+            id: Date.now(),
+            outfit: { ...this.state.currentOutfit },
+            createdAt: new Date().toISOString()
+        };
+        
+        savedOutfits.push(newOutfit);
+        localStorage.setItem('fashionhub_outfits', JSON.stringify(savedOutfits));
+        
+        this.showAlert('3D образ сохранен!');
+    }
+
+    handleFittingTabChange(category) {
+        this.setActiveFittingTab(category);
+    }
+
+    // Админка
+    showAdminPanel() {
+        this.showPanel('adminPanel');
+        this.loadAdminProducts();
+        this.loadOrders();
+    }
+
+    hideAdminPanel() {
+        this.hidePanel('adminPanel');
+    }
+
+    switchAdminTab(tabName) {
+        document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        const tabContent = document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+        const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+        
+        if (tabContent) tabContent.classList.add('active');
+        if (tabButton) tabButton.classList.add('active');
+    }
+
+    loadAdminProducts() {
+        const container = document.getElementById('adminProductsList');
+        if (!container) return;
+
+        const products = Storage.getProducts();
+
+        if (products.length === 0) {
+            container.innerHTML = `
+                <div class="empty-admin">
+                    <p>Нет товаров</p>
+                    <button class="btn-primary" onclick="app.switchAdminTab('add')" style="margin-top: 15px;">
+                        Добавить первый товар
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = products.map(product => `
+            <div class="admin-product-card">
+                <img src="${product.images[0]}" alt="${product.name}" class="admin-product-image"
+                     onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=Image+Error'">
+                <div class="admin-product-info">
+                    <h4>${product.name}</h4>
+                    <div class="admin-product-price">${product.price.toLocaleString()} ₽</div>
+                    <div class="admin-product-category">${this.getCategoryName(product.category)}</div>
+                    <div class="admin-product-badges">
+                        ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
+                        ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
+                        ${product.isHot ? '<span class="badge hot">HOT</span>' : ''}
+                    </div>
+                </div>
+                <div class="admin-product-actions">
+                    <button class="btn-small btn-danger" onclick="app.deleteProduct(${product.id})">
+                        Удалить
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadOrders() {
         const container = document.getElementById('adminOrdersList');
         if (!container) return;
 
         const orders = Storage.getOrders();
-        
+
         if (orders.length === 0) {
-            container.innerHTML = '<p class="empty-text">Заказов пока нет</p>';
+            container.innerHTML = `
+                <div class="empty-admin">
+                    <p>Нет заказов</p>
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = orders.map(order => `
-            <div class="admin-order-card">
-                <div class="order-header">
+            <div class="order-card">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <h4>Заказ #${order.id}</h4>
-                    <span class="order-status ${order.status}">${this.getOrderStatusText(order.status)}</span>
+                    <span style="padding: 4px 12px; background: #fef3c7; color: #92400e; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                        Новый
+                    </span>
                 </div>
-                <div class="order-info">
-                    <p><strong>Клиент:</strong> ${order.user?.first_name || 'Неизвестно'}</p>
-                    <p><strong>Сумма:</strong> ${order.total.toLocaleString()} ₽</p>
-                    <p><strong>Товаров:</strong> ${order.items.length} шт.</p>
-                    <p><strong>Дата:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-                </div>
-                <div class="order-actions">
-                    <select onchange="app.updateOrderStatus(${order.id}, this.value)" 
-                            class="status-select">
-                        <option value="new" ${order.status === 'new' ? 'selected' : ''}>Новый</option>
-                        <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>В обработке</option>
-                        <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Отправлен</option>
-                        <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Доставлен</option>
-                        <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Отменен</option>
-                    </select>
+                <div style="color: #6b7280; margin-bottom: 10px;">
+                    <div>Сумма: <strong style="color: #6366f1;">${order.total.toLocaleString()} ₽</strong></div>
+                    <div>Товаров: ${order.items.length} шт.</div>
+                    <div>Дата: ${new Date(order.createdAt).toLocaleDateString()}</div>
                 </div>
             </div>
         `).join('');
-    }
-
-    getOrderStatusText(status) {
-        const statuses = {
-            'new': 'Новый',
-            'processing': 'В обработке', 
-            'shipped': 'Отправлен',
-            'delivered': 'Доставлен',
-            'cancelled': 'Отменен'
-        };
-        return statuses[status] || status;
-    }
-
-    updateOrderStatus(orderId, status) {
-        if (Storage.updateOrderStatus(orderId, status)) {
-            this.showAlert(`Статус заказа #${orderId} обновлен`);
-            this.renderAdminOrders();
-        }
     }
 
     addNewProduct(e) {
         e.preventDefault();
         
-        const formData = new FormData(e.target);
-        const newProduct = {
-            name: formData.get('productName'),
-            description: formData.get('productDescription'),
-            price: parseInt(formData.get('productPrice')),
-            oldPrice: formData.get('productOldPrice') ? parseInt(formData.get('productOldPrice')) : null,
-            category: formData.get('productCategory'),
-            sizes: formData.get('productSizes').split(',').map(s => s.trim()),
-            colors: formData.get('productColors').split(',').map(c => c.trim()),
-            inStock: formData.get('productInStock') === 'true',
-            isNew: formData.get('productIsNew') === 'true',
-            isSale: formData.get('productIsSale') === 'true',
-            isHot: formData.get('productIsHot') === 'true',
-            tags: formData.get('productTags').split(',').map(t => t.trim()),
-            material: formData.get('productMaterial'),
-            care: formData.get('productCare'),
-            images: ['https://placehold.co/400x500/64748b/ffffff?text=New+Product'], // временное изображение
-            modelImages: ['https://placehold.co/400x500/64748b/ffffff?text=3D+Model'],
-            fitting: {
-                type: formData.get('productCategory'),
-                layer: this.getLayerByCategory(formData.get('productCategory'))
-            }
-        };
+        const mainImageFile = document.getElementById('productImageFile')?.files[0];
+        const modelImageFile = document.getElementById('productModelImageFile')?.files[0];
 
-        const product = Storage.addProduct(newProduct);
-        this.state.products = Storage.getProducts();
-        
-        this.renderAdminProducts();
-        this.showAlert(`Товар "${product.name}" добавлен!`);
-        e.target.reset();
-        this.removeImage();
-        this.removeModelImage();
+        if (!mainImageFile) {
+            this.showAlert('Пожалуйста, выберите основное изображение товара');
+            return;
+        }
+
+        // Читаем изображения
+        Promise.all([
+            this.readFileAsDataURL(mainImageFile),
+            modelImageFile ? this.readFileAsDataURL(modelImageFile) : Promise.resolve(null)
+        ]).then(([mainImageData, modelImageData]) => {
+            const product = {
+                id: Date.now(),
+                name: document.getElementById('productName').value,
+                description: document.getElementById('productDescription').value,
+                price: parseInt(document.getElementById('productPrice').value),
+                oldPrice: document.getElementById('productOldPrice').value ? 
+                    parseInt(document.getElementById('productOldPrice').value) : null,
+                category: document.getElementById('productCategory').value,
+                images: [mainImageData],
+                modelImages: modelImageData ? [modelImageData] : [],
+                sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
+                colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
+                inStock: true,
+                isNew: document.getElementById('productIsNew')?.checked || false,
+                isSale: document.getElementById('productIsSale')?.checked || false,
+                isHot: document.getElementById('productIsHot')?.checked || false,
+                fitting: this.getFittingConfig(document.getElementById('productCategory').value)
+            };
+
+            const products = Storage.getProducts();
+            products.push(product);
+            Storage.saveProducts(products);
+            
+            this.state.products = products;
+            this.state.filteredProducts = products;
+            this.renderProducts();
+            this.showAlert('Товар успешно добавлен!');
+            
+            // Сбрасываем форму
+            e.target.reset();
+            this.removeImage();
+            this.removeModelImage();
+        }).catch(error => {
+            this.showAlert('Ошибка при добавлении товара: ' + error.message);
+        });
     }
 
-    getLayerByCategory(category) {
-        const layers = {
-            'tops': 'top-layer',
-            'bottoms': 'bottom-layer',
-            'dresses': 'dress-layer', 
-            'shoes': 'shoes-layer'
-        };
-        return layers[category] || 'top-layer';
+    readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e);
+            reader.readAsDataURL(file);
+        });
     }
 
-    editProduct(productId) {
-        this.showAlert(`Редактирование товара #${productId} - в разработке`);
+    getFittingConfig(category) {
+        const configs = {
+            'tops': { type: 'tops', layer: 'top-layer' },
+            'bottoms': { type: 'bottoms', layer: 'bottom-layer' },
+            'dresses': { type: 'dresses', layer: 'dress-layer' },
+            'shoes': { type: 'shoes', layer: 'shoes-layer' }
+        };
+        return configs[category] || { type: category, layer: category + '-layer' };
     }
 
     deleteProduct(productId) {
-        if (confirm('Удалить этот товар?')) {
-            this.state.products = Storage.deleteProduct(productId);
-            this.renderAdminProducts();
-            this.showAlert('Товар удален');
-        }
+        if (!confirm('Удалить этот товар?')) return;
+        
+        const products = Storage.getProducts().filter(p => p.id !== productId);
+        Storage.saveProducts(products);
+        
+        this.state.products = products;
+        this.state.filteredProducts = products;
+        this.renderProducts();
+        this.loadAdminProducts();
+        this.showAlert('Товар удален');
     }
 
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    showFittingRoom() {
-        document.getElementById('mainApp').classList.add('hidden');
-        document.getElementById('fittingRoom').classList.remove('hidden');
+    // Утилиты
+    updateCategoryCounts() {
+        const categories = {
+            'all': this.state.products.length,
+            'new': this.state.products.filter(p => p.isNew).length,
+            'tops': this.state.products.filter(p => p.category === 'tops').length,
+            'bottoms': this.state.products.filter(p => p.category === 'bottoms').length,
+            'dresses': this.state.products.filter(p => p.category === 'dresses').length,
+            'shoes': this.state.products.filter(p => p.category === 'shoes').length
+        };
+
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            const category = btn.dataset.category;
+            const count = categories[category] || 0;
+            btn.textContent = `${this.getCategoryName(category)} (${count})`;
+        });
     }
 
-    closeFittingRoom() {
-        document.getElementById('fittingRoom').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-    }
-
-    showMainApp() {
-        document.getElementById('fittingRoom').classList.add('hidden');
-        document.getElementById('adminPanel').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-    }
-
-    toggleSearch() {
-        const searchContainer = document.getElementById('searchContainer');
-        if (searchContainer) {
-            searchContainer.classList.toggle('active');
-            
-            const searchInput = document.getElementById('searchInput');
-            if (searchContainer.classList.contains('active')) {
-                setTimeout(() => searchInput?.focus(), 100);
-            } else {
-                this.handleSearch('');
-            }
-        }
-    }
-
-    openCart() {
-        this.renderCartItems();
-        document.getElementById('cartSidebar').classList.add('active');
-    }
-
-    closeCart() {
-        document.getElementById('cartSidebar').classList.remove('active');
-    }
-
-    showModal() {
-        document.getElementById('productModal').classList.add('active');
-    }
-
-    closeModal() {
-        document.getElementById('productModal').classList.remove('active');
+    getCategoryName(category) {
+        const names = {
+            'all': 'Все товары',
+            'new': 'Новинки',
+            'tops': 'Футболки',
+            'bottoms': 'Штаны',
+            'dresses': 'Платья',
+            'shoes': 'Обувь'
+        };
+        return names[category] || category;
     }
 
     updateCartBadge() {
+        const totalItems = this.state.cart.reduce((sum, item) => sum + item.quantity, 0);
         const badge = document.getElementById('cartBadge');
         if (badge) {
-            const count = this.state.cart.length;
-            badge.textContent = count;
-            badge.style.display = count > 0 ? 'flex' : 'none';
+            badge.textContent = totalItems;
+            badge.style.display = totalItems > 0 ? 'flex' : 'none';
         }
-    }
-
-    updateCategoryCounts() {
-        const categories = ['all', 'tops', 'bottoms', 'dresses', 'shoes', 'new'];
-        
-        categories.forEach(category => {
-            const btn = document.querySelector(`[data-category="${category}"]`);
-            if (btn) {
-                const count = this.getCategoryCount(category);
-                let countElement = btn.querySelector('.category-count');
-                
-                if (!countElement) {
-                    countElement = document.createElement('span');
-                    countElement.className = 'category-count';
-                    btn.appendChild(countElement);
-                }
-                
-                countElement.textContent = count;
-            }
-        });
-    }
-
-    getCategoryCount(category) {
-        switch(category) {
-            case 'all': return this.state.products.length;
-            case 'new': return this.state.products.filter(p => p.isNew).length;
-            default: return this.state.products.filter(p => p.category === category).length;
-        }
-    }
-
-    setupMainButton() {
-        if (!this.tg?.MainButton) return;
-        
-        this.tg.MainButton.setText('Открыть каталог');
-        this.tg.MainButton.onClick(() => {
-            this.showMainApp();
-        });
-        this.tg.MainButton.show();
     }
 
     showAlert(message) {
-        if (this.tg?.showAlert) {
+        if (this.tg && this.tg.showAlert) {
             this.tg.showAlert(message);
         } else {
             alert(message);
         }
     }
 
+    setupMainButton() {
+        if (this.tg && this.tg.MainButton) {
+            this.tg.MainButton.setText("🛍️ Открыть каталог");
+            this.tg.MainButton.onClick(() => {
+                this.showMainApp();
+            });
+            this.tg.MainButton.show();
+        }
+    }
+
+    // Управление видимостью
     hideLoading() {
         const loading = document.getElementById('loading');
-        if (loading) {
-            loading.style.display = 'none';
+        const mainApp = document.getElementById('main-app');
+        
+        if (loading) loading.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
+    }
+
+    showModal() {
+        const modal = document.getElementById('productModal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    closeModal() {
+        const modal = document.getElementById('productModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    openCart() {
+        this.renderCartItems();
+        const cart = document.getElementById('cartSidebar');
+        if (cart) cart.classList.add('active');
+    }
+
+    closeCart() {
+        const cart = document.getElementById('cartSidebar');
+        if (cart) cart.classList.remove('active');
+    }
+
+    showFittingRoom() {
+        this.showPanel('fittingRoom');
+    }
+
+    closeFittingRoom() {
+        this.hidePanel('fittingRoom');
+    }
+
+    showMainApp() {
+        this.hidePanel('fittingRoom');
+        this.hidePanel('adminPanel');
+    }
+
+    showPanel(panelId) {
+        const mainApp = document.getElementById('main-app');
+        const panel = document.getElementById(panelId);
+        
+        if (mainApp) mainApp.classList.add('hidden');
+        if (panel) panel.classList.remove('hidden');
+    }
+
+    hidePanel(panelId) {
+        const panel = document.getElementById(panelId);
+        const mainApp = document.getElementById('main-app');
+        
+        if (panel) panel.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
+    }
+
+    toggleSearch() {
+        const search = document.getElementById('searchContainer');
+        if (search) {
+            search.classList.toggle('hidden');
+            if (!search.classList.contains('hidden')) {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.focus();
+            } else {
+                this.handleSearch('');
+            }
         }
     }
 }
 
-// Инициализация приложения
+// Запуск приложения
 let app;
 
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        app = new FashionApp();
+    });
+} else {
     app = new FashionApp();
-});
-
-// Глобальные функции для обработки событий в HTML
-function removeImage() {
-    app.removeImage();
 }
 
-function removeModelImage() {
-    app.removeModelImage();
-}
+window.app = app;
