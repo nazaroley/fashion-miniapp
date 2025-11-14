@@ -1,3 +1,12 @@
+// admin.js - добавьте проверку
+console.log('Admin loading, BASE_PRODUCTS:', typeof BASE_PRODUCTS);
+
+if (typeof BASE_PRODUCTS === 'undefined') {
+    console.error('BASE_PRODUCTS не доступен в admin.js');
+    // Защитная логика
+    this.isAdmin = false;
+    return;
+}
 // Админ-функции
 class AdminPanel {
     constructor(app) {
