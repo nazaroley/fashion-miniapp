@@ -9,7 +9,10 @@ const BASE_PRODUCTS = {
             oldPrice: 2999,
             category: "tops",
             images: ["https://placehold.co/400x500/ffffff/333333?text=White+T-Shirt"],
-            modelImages: ["https://i.imgur.com/y3QqP8c.png"],
+            modelImages: {
+                female: "clothing/female/tops/white-tshirt.png",
+                male: "clothing/male/tops/white-tshirt.png"
+            },
             sizes: ["S", "M", "L", "XL"],
             colors: ["Белый", "Черный", "Серый"],
             inStock: true,
@@ -21,7 +24,7 @@ const BASE_PRODUCTS = {
             care: "Машинная стирка при 30°C",
             fitting: {
                 type: "tops",
-                layer: "top-layer"
+                layer: "top"
             }
         },
         {
@@ -32,7 +35,10 @@ const BASE_PRODUCTS = {
             oldPrice: null,
             category: "bottoms",
             images: ["https://placehold.co/400x500/1e3a8a/ffffff?text=Blue+Jeans"],
-            modelImages: ["https://i.imgur.com/J5Qq3wR.png"],
+            modelImages: {
+                female: "clothing/female/bottoms/blue-jeans.png",
+                male: "clothing/male/bottoms/blue-jeans.png"
+            },
             sizes: ["28", "30", "32", "34", "36"],
             colors: ["Синий", "Черный", "Светло-синий"],
             inStock: true,
@@ -44,7 +50,7 @@ const BASE_PRODUCTS = {
             care: "Машинная стирка при 30°C",
             fitting: {
                 type: "bottoms",
-                layer: "bottom-layer"
+                layer: "bottom"
             }
         },
         {
@@ -55,7 +61,10 @@ const BASE_PRODUCTS = {
             oldPrice: 9999,
             category: "dresses",
             images: ["https://placehold.co/400x500/dc2626/ffffff?text=Red+Dress"],
-            modelImages: ["https://i.imgur.com/k5Qq9wS.png"],
+            modelImages: {
+                female: "clothing/female/dresses/red-dress.png",
+                male: "clothing/male/dresses/red-dress.png"
+            },
             sizes: ["XS", "S", "M", "L"],
             colors: ["Красный", "Бордовый"],
             inStock: true,
@@ -67,7 +76,7 @@ const BASE_PRODUCTS = {
             care: "Только химчистка",
             fitting: {
                 type: "dresses",
-                layer: "dress-layer"
+                layer: "dress"
             }
         },
         {
@@ -78,7 +87,10 @@ const BASE_PRODUCTS = {
             oldPrice: 6999,
             category: "shoes",
             images: ["https://placehold.co/400x500/000000/ffffff?text=Black+Shoes"],
-            modelImages: ["https://i.imgur.com/m5Qq2wR.png"],
+            modelImages: {
+                female: "clothing/female/shoes/black-sneakers.png",
+                male: "clothing/male/shoes/black-sneakers.png"
+            },
             sizes: ["38", "39", "40", "41", "42", "43"],
             colors: ["Черный", "Белый", "Коричневый"],
             inStock: true,
@@ -90,7 +102,7 @@ const BASE_PRODUCTS = {
             care: "Протирать влажной тканью",
             fitting: {
                 type: "shoes",
-                layer: "shoes-layer"
+                layer: "shoes"
             }
         },
         {
@@ -101,7 +113,10 @@ const BASE_PRODUCTS = {
             oldPrice: 3999,
             category: "tops",
             images: ["https://placehold.co/400x500/00ff00/ffffff?text=Green+Shirt"],
-            modelImages: ["https://i.imgur.com/n5Qq7wR.png"],
+            modelImages: {
+                female: "clothing/female/tops/green-shirt.png",
+                male: "clothing/male/tops/green-shirt.png"
+            },
             sizes: ["S", "M", "L", "XL"],
             colors: ["Зеленый", "Голубой", "Белый"],
             inStock: true,
@@ -113,442 +128,18 @@ const BASE_PRODUCTS = {
             care: "Машинная стирка при 30°C",
             fitting: {
                 type: "tops",
-                layer: "top-layer"
+                layer: "top"
             }
         }
     ],
     adminUsers: [447355860]
 };
 
-// ThreeJSFittingRoom класс (без изменений)
-class ThreeJSFittingRoom {
-    constructor() {
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
-        this.model = null;
-        this.currentOutfit = {};
-        this.isRotating = false;
-        this.rotationSpeed = 0.01;
-        this.textureLoader = new THREE.TextureLoader();
-    }
-
-    init(containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) {
-            console.error('Container not found:', containerId);
-            return;
-        }
-
-        try {
-            // Очищаем контейнер
-            container.innerHTML = '';
-
-            // Сцена
-            this.scene = new THREE.Scene();
-            this.scene.background = new THREE.Color(0x1e293b);
-
-            // Камера
-            this.camera = new THREE.PerspectiveCamera(45, 300/400, 0.1, 1000);
-            this.camera.position.set(0, 1.2, 3.5);
-            this.camera.lookAt(0, 1, 0);
-
-            // Рендерер
-            this.renderer = new THREE.WebGLRenderer({ 
-                antialias: true,
-                alpha: true 
-            });
-            this.renderer.setSize(300, 400);
-            this.renderer.shadowMap.enabled = true;
-            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(this.renderer.domElement);
-
-            // Освещение
-            this.setupLighting();
-
-            // Создаем улучшенную модель человека
-            this.createEnhancedModel();
-
-            // Запускаем анимацию
-            this.animate();
-
-            console.log('Enhanced 3D Fitting Room initialized');
-
-        } catch (error) {
-            console.error('Error initializing 3D Fitting Room:', error);
-            container.innerHTML = '<div class="loading-3d">Ошибка загрузки 3D</div>';
-        }
-    }
-
-    setupLighting() {
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        this.scene.add(ambientLight);
-
-        // Main directional light
-        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        mainLight.position.set(3, 10, 5);
-        mainLight.castShadow = true;
-        mainLight.shadow.mapSize.width = 1024;
-        mainLight.shadow.mapSize.height = 1024;
-        this.scene.add(mainLight);
-
-        // Fill light
-        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-        fillLight.position.set(-3, 5, -2);
-        this.scene.add(fillLight);
-
-        // Rim light
-        const rimLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        rimLight.position.set(0, 5, -5);
-        this.scene.add(rimLight);
-    }
-
-    createEnhancedModel() {
-        const group = new THREE.Group();
-
-        // Тело (торс) - более анатомическая форма
-        const bodyGroup = new THREE.Group();
-        
-        // Грудь/торс
-        const torsoGeometry = new THREE.CylinderGeometry(0.22, 0.25, 0.6, 16);
-        const torsoMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xffdbac,
-            transparent: true,
-            opacity: 0.9
-        });
-        const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
-        torso.position.y = 0.9;
-        torso.castShadow = true;
-        bodyGroup.add(torso);
-
-        // Таз
-        const pelvisGeometry = new THREE.CylinderGeometry(0.25, 0.28, 0.2, 16);
-        const pelvisMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xffdbac,
-            transparent: true,
-            opacity: 0.9
-        });
-        const pelvis = new THREE.Mesh(pelvisGeometry, pelvisMaterial);
-        pelvis.position.y = 0.5;
-        pelvis.castShadow = true;
-        bodyGroup.add(pelvis);
-
-        // Голова
-        const headGeometry = new THREE.SphereGeometry(0.18, 32, 32);
-        const headMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xffdbac,
-            transparent: true,
-            opacity: 0.9
-        });
-        const head = new THREE.Mesh(headGeometry, headMaterial);
-        head.position.y = 1.5;
-        head.castShadow = true;
-        bodyGroup.add(head);
-
-        // Шея
-        const neckGeometry = new THREE.CylinderGeometry(0.08, 0.1, 0.15, 8);
-        const neckMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xffdbac,
-            transparent: true,
-            opacity: 0.9
-        });
-        const neck = new THREE.Mesh(neckGeometry, neckMaterial);
-        neck.position.y = 1.35;
-        neck.castShadow = true;
-        bodyGroup.add(neck);
-
-        // Ноги - более естественная форма
-        const legGeometry = new THREE.CylinderGeometry(0.09, 0.07, 0.8, 12);
-        const legMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xffdbac,
-            transparent: true,
-            opacity: 0.9
-        });
-        
-        const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-        leftLeg.position.set(-0.08, 0.1, 0);
-        leftLeg.castShadow = true;
-        bodyGroup.add(leftLeg);
-
-        const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-        rightLeg.position.set(0.08, 0.1, 0);
-        rightLeg.castShadow = true;
-        bodyGroup.add(rightLeg);
-
-        // Руки - более естественная форма
-        const armGeometry = new THREE.CylinderGeometry(0.06, 0.05, 0.7, 10);
-        const armMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xffdbac,
-            transparent: true,
-            opacity: 0.9
-        });
-        
-        const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-        leftArm.position.set(-0.28, 0.95, 0);
-        leftArm.rotation.z = Math.PI / 5;
-        leftArm.castShadow = true;
-        bodyGroup.add(leftArm);
-
-        const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-        rightArm.position.set(0.28, 0.95, 0);
-        rightArm.rotation.z = -Math.PI / 5;
-        rightArm.castShadow = true;
-        bodyGroup.add(rightArm);
-
-        group.add(bodyGroup);
-        this.model = group;
-        this.scene.add(group);
-    }
-
-    async addClothing(itemType, textureUrl, productName = '') {
-        // Убираем старую одежду этого типа
-        if (this.currentOutfit[itemType]) {
-            this.scene.remove(this.currentOutfit[itemType]);
-        }
-
-        try {
-            const texture = await this.loadTexture(textureUrl);
-            const color = this.extractColorFromName(productName);
-            
-            let clothingMesh;
-
-            switch(itemType) {
-                case 'tops':
-                    clothingMesh = this.createTopClothing(texture, color);
-                    break;
-                case 'bottoms':
-                    clothingMesh = this.createBottomClothing(texture, color);
-                    break;
-                case 'dresses':
-                    clothingMesh = this.createDressClothing(texture, color);
-                    break;
-                case 'shoes':
-                    clothingMesh = this.createShoesClothing(texture, color);
-                    break;
-            }
-
-            if (clothingMesh) {
-                this.scene.add(clothingMesh);
-                this.currentOutfit[itemType] = clothingMesh;
-                console.log('Clothing added:', itemType, productName);
-            }
-
-        } catch (error) {
-            console.error('Error adding clothing:', error);
-            // Используем простой цвет если текстура не загрузилась
-            this.addClothingWithColor(itemType, this.extractColorFromName(productName));
-        }
-    }
-
-    loadTexture(url) {
-        return new Promise((resolve, reject) => {
-            this.textureLoader.load(url, resolve, undefined, reject);
-        });
-    }
-
-    extractColorFromName(productName) {
-        const name = productName.toLowerCase();
-        
-        if (name.includes('красн') || name.includes('red')) return 0xff0000;
-        if (name.includes('син') || name.includes('blue')) return 0x0000ff;
-        if (name.includes('зелен') || name.includes('green')) return 0x00ff00;
-        if (name.includes('желт') || name.includes('yellow')) return 0xffff00;
-        if (name.includes('розов') || name.includes('pink')) return 0xff69b4;
-        if (name.includes('фиолетов') || name.includes('purple')) return 0x800080;
-        if (name.includes('оранж') || name.includes('orange')) return 0xffa500;
-        if (name.includes('черн') || name.includes('black')) return 0x000000;
-        if (name.includes('сер') || name.includes('gray') || name.includes('grey')) return 0x808080;
-        if (name.includes('бел') || name.includes('white')) return 0xffffff;
-        if (name.includes('коричн') || name.includes('brown')) return 0x8b4513;
-        
-        return 0x666666; // нейтральный серый по умолчанию
-    }
-
-    createTopClothing(texture, color) {
-        const group = new THREE.Group();
-
-        // Основная часть футболки
-        const shirtGeometry = new THREE.CylinderGeometry(0.23, 0.26, 0.5, 16);
-        if (texture) {
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(1.5, 1.5);
-        }
-        
-        const shirtMaterial = new THREE.MeshLambertMaterial({ 
-            map: texture,
-            color: color,
-            transparent: true,
-            opacity: 0.95
-        });
-        const shirt = new THREE.Mesh(shirtGeometry, shirtMaterial);
-        shirt.position.y = 1.05;
-        shirt.castShadow = true;
-        group.add(shirt);
-
-        // Рукава
-        const sleeveGeometry = new THREE.CylinderGeometry(0.065, 0.06, 0.3, 8);
-        const sleeveMaterial = new THREE.MeshLambertMaterial({ 
-            map: texture,
-            color: color,
-            transparent: true,
-            opacity: 0.95
-        });
-        
-        const leftSleeve = new THREE.Mesh(sleeveGeometry, sleeveMaterial);
-        leftSleeve.position.set(-0.25, 1.0, 0);
-        leftSleeve.rotation.z = Math.PI / 5;
-        leftSleeve.castShadow = true;
-        group.add(leftSleeve);
-
-        const rightSleeve = new THREE.Mesh(sleeveGeometry, sleeveMaterial);
-        rightSleeve.position.set(0.25, 1.0, 0);
-        rightSleeve.rotation.z = -Math.PI / 5;
-        rightSleeve.castShadow = true;
-        group.add(rightSleeve);
-
-        return group;
-    }
-
-    createBottomClothing(texture, color) {
-        const pantsGeometry = new THREE.CylinderGeometry(0.27, 0.23, 0.6, 16);
-        if (texture) {
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(1.2, 1.5);
-        }
-        
-        const pantsMaterial = new THREE.MeshLambertMaterial({ 
-            map: texture,
-            color: color,
-            transparent: true,
-            opacity: 0.95
-        });
-        const pants = new THREE.Mesh(pantsGeometry, pantsMaterial);
-        pants.position.y = 0.4;
-        pants.castShadow = true;
-
-        return pants;
-    }
-
-    createDressClothing(texture, color) {
-        const dressGeometry = new THREE.CylinderGeometry(0.23, 0.4, 1.0, 16);
-        if (texture) {
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(1.3, 1.8);
-        }
-        
-        const dressMaterial = new THREE.MeshLambertMaterial({ 
-            map: texture,
-            color: color,
-            transparent: true,
-            opacity: 0.95
-        });
-        const dress = new THREE.Mesh(dressGeometry, dressMaterial);
-        dress.position.y = 0.7;
-        dress.castShadow = true;
-
-        return dress;
-    }
-
-    createShoesClothing(texture, color) {
-        const group = new THREE.Group();
-
-        const shoeGeometry = new THREE.BoxGeometry(0.12, 0.05, 0.25);
-        if (texture) {
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(1, 1);
-        }
-        
-        const shoeMaterial = new THREE.MeshLambertMaterial({ 
-            map: texture,
-            color: color,
-            transparent: true,
-            opacity: 0.95
-        });
-        
-        const leftShoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
-        leftShoe.position.set(-0.08, -0.05, 0.08);
-        leftShoe.rotation.x = -0.2;
-        leftShoe.castShadow = true;
-        group.add(leftShoe);
-
-        const rightShoe = new THREE.Mesh(shoeGeometry, shoeMaterial);
-        rightShoe.position.set(0.08, -0.05, 0.08);
-        rightShoe.rotation.x = -0.2;
-        rightShoe.castShadow = true;
-        group.add(rightShoe);
-
-        return group;
-    }
-
-    addClothingWithColor(itemType, color) {
-        let clothingMesh;
-
-        switch(itemType) {
-            case 'tops':
-                clothingMesh = this.createTopClothing(null, color);
-                break;
-            case 'bottoms':
-                clothingMesh = this.createBottomClothing(null, color);
-                break;
-            case 'dresses':
-                clothingMesh = this.createDressClothing(null, color);
-                break;
-            case 'shoes':
-                clothingMesh = this.createShoesClothing(null, color);
-                break;
-        }
-
-        if (clothingMesh) {
-            this.scene.add(clothingMesh);
-            this.currentOutfit[itemType] = clothingMesh;
-        }
-    }
-
-    toggleRotation() {
-        this.isRotating = !this.isRotating;
-        return this.isRotating;
-    }
-
-    reset() {
-        // Убираем всю одежду
-        Object.values(this.currentOutfit).forEach(item => {
-            if (item instanceof THREE.Mesh || item instanceof THREE.Group) {
-                this.scene.remove(item);
-            }
-        });
-        this.currentOutfit = {};
-        
-        // Сбрасываем вращение модели
-        if (this.model) {
-            this.model.rotation.y = 0;
-        }
-        this.isRotating = false;
-    }
-
-    animate() {
-        requestAnimationFrame(() => this.animate());
-        
-        // Вращение модели если включено
-        if (this.isRotating && this.model) {
-            this.model.rotation.y += this.rotationSpeed;
-        }
-        
-        this.renderer.render(this.scene, this.camera);
-    }
-
-    setSize(width, height) {
-        if (this.renderer && this.camera) {
-            this.renderer.setSize(width, height);
-            this.camera.aspect = width / height;
-            this.camera.updateProjectionMatrix();
-        }
-    }
-}
+// Базовая модель
+const MODEL_BASES = {
+    female: "models/female.png",
+    male: "models/male.png"
+};
 
 // Хранилище
 const Storage = {
@@ -672,7 +263,6 @@ class FashionApp {
             }
         };
 
-        this.threeFittingRoom = null;
         this.init();
     }
 
@@ -751,7 +341,7 @@ class FashionApp {
     fixViewportHeight() {
         const setVH = () => {
             const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            document.documentElement.style.setProperty('--vh', `${vh}px');
         };
         
         setVH();
@@ -801,27 +391,32 @@ class FashionApp {
             if (e.target === e.currentTarget) this.closeModal();
         });
 
-        // 3D Примерочная
+        // 2D Примерочная
         const fittingBack = document.getElementById('fittingBack');
         const fittingProceed = document.getElementById('fittingProceed');
         const fittingBackToSelection = document.getElementById('fittingBackToSelection');
         const fittingReset = document.getElementById('fittingReset');
-        const changeModel = document.getElementById('changeModel');
-        const toggleRotation = document.getElementById('toggleRotation');
         const saveOutfit = document.getElementById('saveOutfit');
+        const shareOutfit = document.getElementById('shareOutfit');
         
         if (fittingBack) fittingBack.addEventListener('click', () => this.closeFittingRoom());
         if (fittingProceed) fittingProceed.addEventListener('click', () => this.showFittingView());
         if (fittingBackToSelection) fittingBackToSelection.addEventListener('click', () => this.showFittingSelection());
         if (fittingReset) fittingReset.addEventListener('click', () => this.resetFitting());
-        if (changeModel) changeModel.addEventListener('click', () => this.changeModel());
-        if (toggleRotation) toggleRotation.addEventListener('click', () => this.toggleRotation());
         if (saveOutfit) saveOutfit.addEventListener('click', () => this.saveOutfit());
+        if (shareOutfit) shareOutfit.addEventListener('click', () => this.shareOutfit());
 
         // Табы в примерочной
         document.querySelectorAll('.tab-btn').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 this.handleFittingTabChange(e.target.dataset.category);
+            });
+        });
+
+        // Выбор модели
+        document.querySelectorAll('.model-btn[data-model]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.changeModel(e.target.dataset.model);
             });
         });
 
@@ -1038,7 +633,7 @@ class FashionApp {
                                        transition: all 0.2s ease;"
                                 onmouseover="this.style.background='#6366f1'; this.style.color='white'" 
                                 onmouseout="this.style.background='#f8fafc'; this.style.color='#6366f1'">
-                            👗 3D Примерка
+                            👗 2D Примерка
                         </button>
                     </div>
                 </div>
@@ -1217,7 +812,7 @@ class FashionApp {
         this.renderProducts();
     }
 
-    // 3D ПРИМЕРОЧНАЯ - ИСПРАВЛЕННЫЙ ВЫБОР ВЕЩЕЙ
+    // 2D ПРИМЕРОЧНАЯ
     openFittingRoom(productId = null) {
         this.showFittingRoom();
         this.showFittingSelection();
@@ -1259,30 +854,20 @@ class FashionApp {
         document.getElementById('fittingSelection').classList.add('hidden');
         document.getElementById('fittingView').classList.remove('hidden');
         
-        // Инициализируем 3D сцену при первом показе
-        setTimeout(() => {
-            if (!this.threeFittingRoom) {
-                this.threeFittingRoom = new ThreeJSFittingRoom();
-                this.threeFittingRoom.init('model3dContainer');
-            }
-            this.applyOutfitTo3D();
-        }, 100);
-        
+        // Обновляем отображение модели
+        this.updateModelView();
         this.renderOutfitItems();
     }
 
-    // ИСПРАВЛЕННЫЙ МЕТОД - добавление товара в примерку
+    // Добавление товара в примерку
     addToFitting(productId) {
-        console.log('Adding to fitting, productId:', productId);
-        
         const product = this.state.products.find(p => p.id === productId);
         if (!product || !product.fitting) {
-            console.error('Product not found:', productId, 'Available products:', this.state.products);
+            console.error('Product not found:', productId);
             return;
         }
 
         const category = product.fitting.type;
-        console.log('Adding to fitting:', product.name, 'Category:', category);
         
         // Для платьев снимаем верх и низ
         if (category === 'dresses') {
@@ -1297,10 +882,8 @@ class FashionApp {
         // Если товар уже выбран, снимаем его, иначе добавляем
         if (this.state.currentOutfit[category]?.id === product.id) {
             this.state.currentOutfit[category] = null;
-            console.log('Removed from fitting:', product.name);
         } else {
             this.state.currentOutfit[category] = product;
-            console.log('Added to fitting:', product.name);
         }
 
         this.renderSelectedItems();
@@ -1389,24 +972,53 @@ class FashionApp {
         }
     }
 
-    applyOutfitTo3D() {
-        if (!this.threeFittingRoom) return;
+    // Обновление отображения модели
+    updateModelView() {
+        const modelBase = document.getElementById('modelBase');
+        const clothingLayers = document.getElementById('clothingLayers');
+        
+        if (!modelBase || !clothingLayers) return;
 
-        // Сбрасываем текущую одежду
-        this.threeFittingRoom.reset();
+        // Устанавливаем базовую модель
+        modelBase.innerHTML = `
+            <img src="${MODEL_BASES[this.state.currentModel]}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
+                 class="model-base-image"
+                 onerror="this.src='https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель'">
+        `;
 
-        // Применяем выбранные вещи с задержками для плавности
-        Object.entries(this.state.currentOutfit).forEach(([category, product], index) => {
-            if (product && product.modelImages && product.modelImages.length > 0) {
-                setTimeout(() => {
-                    this.threeFittingRoom.addClothing(
-                        category, 
-                        product.modelImages[0],
-                        product.name
-                    );
-                }, index * 200); // Задержка между добавлением элементов
+        // Очищаем слои одежды
+        clothingLayers.innerHTML = '';
+
+        // Добавляем слои одежды в правильном порядке
+        const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
+        
+        layersOrder.forEach(layerType => {
+            const product = this.state.currentOutfit[layerType];
+            if (product && product.modelImages && product.modelImages[this.state.currentModel]) {
+                const layer = document.createElement('div');
+                layer.className = `clothing-layer ${layerType}-layer`;
+                layer.innerHTML = `
+                    <img src="${product.modelImages[this.state.currentModel]}" 
+                         alt="${product.name}" 
+                         class="clothing-image"
+                         onerror="this.src='https://placehold.co/300x500/64748b/ffffff?text=Одежда'">
+                `;
+                clothingLayers.appendChild(layer);
             }
         });
+    }
+
+    // Смена модели
+    changeModel(modelType) {
+        this.state.currentModel = modelType;
+        
+        // Обновляем активную кнопку
+        document.querySelectorAll('.model-btn[data-model]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.model === modelType);
+        });
+        
+        // Обновляем отображение
+        this.updateModelView();
     }
 
     setActiveFittingTab(category) {
@@ -1419,7 +1031,7 @@ class FashionApp {
         this.renderFittingProducts(category);
     }
 
-    // ИСПРАВЛЕННЫЙ МЕТОД - рендеринг товаров в примерочной
+    // Рендеринг товаров в примерочной
     renderFittingProducts(category) {
         const container = document.getElementById('fittingProducts');
         if (!container) return;
@@ -1453,23 +1065,8 @@ class FashionApp {
         }).join('');
     }
 
-    // Остальные методы 3D примерочной
-    toggleRotation() {
-        if (this.threeFittingRoom) {
-            const isRotating = this.threeFittingRoom.toggleRotation();
-            const button = document.getElementById('toggleRotation');
-            if (button) {
-                button.textContent = isRotating ? '⏹️ Стоп' : '🔄 Вращение';
-                button.classList.toggle('active', isRotating);
-            }
-        }
-    }
-
+    // Сброс примерки
     resetFitting() {
-        if (this.threeFittingRoom) {
-            this.threeFittingRoom.reset();
-        }
-        
         // Сбрасываем выбранные вещи
         this.state.currentOutfit = {
             tops: null,
@@ -1481,21 +1078,10 @@ class FashionApp {
         this.renderSelectedItems();
         this.renderOutfitItems();
         this.updateProceedButton();
+        this.updateModelView();
     }
 
-    changeModel() {
-        if (this.threeFittingRoom && this.threeFittingRoom.model) {
-            const skinColors = [0xffdbac, 0xf1c27d, 0xe0ac69, 0xc68642, 0x8d5524];
-            const randomColor = skinColors[Math.floor(Math.random() * skinColors.length)];
-            
-            this.threeFittingRoom.model.children.forEach(child => {
-                if (child.material && child.material.color) {
-                    child.material.color.setHex(randomColor);
-                }
-            });
-        }
-    }
-
+    // Сохранение образа
     saveOutfit() {
         const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
         
@@ -1508,13 +1094,26 @@ class FashionApp {
         const newOutfit = {
             id: Date.now(),
             outfit: { ...this.state.currentOutfit },
+            model: this.state.currentModel,
             createdAt: new Date().toISOString()
         };
         
         savedOutfits.push(newOutfit);
         localStorage.setItem('fashionhub_outfits', JSON.stringify(savedOutfits));
         
-        this.showAlert('3D образ сохранен!');
+        this.showAlert('Образ сохранен!');
+    }
+
+    // Поделиться образом
+    shareOutfit() {
+        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
+        
+        if (!hasItems) {
+            this.showAlert('Добавьте товары для создания образа');
+            return;
+        }
+
+        this.showAlert('Функция "Поделиться" скоро будет доступна!');
     }
 
     handleFittingTabChange(category) {
@@ -1641,7 +1240,13 @@ class FashionApp {
                     parseInt(document.getElementById('productOldPrice').value) : null,
                 category: document.getElementById('productCategory').value,
                 images: [mainImageData],
-                modelImages: modelImageData ? [modelImageData] : [],
+                modelImages: modelImageData ? {
+                    female: modelImageData,
+                    male: modelImageData
+                } : {
+                    female: "clothing/female/default.png",
+                    male: "clothing/male/default.png"
+                },
                 sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
                 colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
                 inStock: true,
@@ -1680,12 +1285,12 @@ class FashionApp {
 
     getFittingConfig(category) {
         const configs = {
-            'tops': { type: 'tops', layer: 'top-layer' },
-            'bottoms': { type: 'bottoms', layer: 'bottom-layer' },
-            'dresses': { type: 'dresses', layer: 'dress-layer' },
-            'shoes': { type: 'shoes', layer: 'shoes-layer' }
+            'tops': { type: 'tops', layer: 'top' },
+            'bottoms': { type: 'bottoms', layer: 'bottom' },
+            'dresses': { type: 'dresses', layer: 'dress' },
+            'shoes': { type: 'shoes', layer: 'shoes' }
         };
-        return configs[category] || { type: category, layer: category + '-layer' };
+        return configs[category] || { type: category, layer: category };
     }
 
     deleteProduct(productId) {
@@ -1758,7 +1363,7 @@ class FashionApp {
         }
     }
 
-    // Управление видимостье
+    // Управление видимостью
     hideLoading() {
         const loading = document.getElementById('loading');
         const mainApp = document.getElementById('main-app');
