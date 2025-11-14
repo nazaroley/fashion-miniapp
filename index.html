@@ -137,26 +137,22 @@
     <!-- 3D Примерочная -->
     <div class="fitting-room-overlay hidden" id="fittingRoom">
         <div class="fitting-container">
-            <div class="fitting-header">
-                <button class="fitting-back" id="fittingBack">← Назад</button>
-                <h2>3D Виртуальная примерочная</h2>
-                <button class="fitting-reset" id="fittingReset">🔄 Сброс</button>
-            </div>
-            
-            <div class="fitting-content">
-                <div class="model-section">
-                    <div id="model3dContainer" class="model-3d-container">
-                        <div class="loading-3d">Загрузка 3D...</div>
-                    </div>
-                    
-                    <div class="model-controls">
-                        <button class="model-btn" id="changeModel">👩 Сменить модель</button>
-                        <button class="model-btn" id="toggleRotation">🔄 Вращение</button>
-                        <button class="model-btn" id="saveOutfit">💾 Сохранить образ</button>
-                    </div>
+            <!-- Этап 1: Выбор одежды -->
+            <div class="fitting-selection" id="fittingSelection">
+                <div class="fitting-header">
+                    <button class="fitting-back" id="fittingBack">← Назад</button>
+                    <h2>Выбор одежды</h2>
+                    <button class="fitting-proceed" id="fittingProceed">👗 Примерить</button>
                 </div>
+                
+                <div class="selection-content">
+                    <div class="selected-items-preview">
+                        <h3>Выбранные вещи:</h3>
+                        <div class="selected-items-list" id="selectedItemsList">
+                            <!-- Выбранные товары -->
+                        </div>
+                    </div>
 
-                <div class="fitting-categories">
                     <div class="category-tabs">
                         <button class="tab-btn active" data-category="tops">👚 Верх</button>
                         <button class="tab-btn" data-category="bottoms">👖 Низ</button>
@@ -166,6 +162,36 @@
                     
                     <div class="fitting-products" id="fittingProducts">
                         <!-- Товары для примерки -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Этап 2: 3D Просмотр -->
+            <div class="fitting-view hidden" id="fittingView">
+                <div class="fitting-header">
+                    <button class="fitting-back-to-selection" id="fittingBackToSelection">← Назад к выбору</button>
+                    <h2>3D Примерка</h2>
+                    <button class="fitting-reset" id="fittingReset">🔄 Сбросить</button>
+                </div>
+                
+                <div class="view-content">
+                    <div class="model-section">
+                        <div id="model3dContainer" class="model-3d-container">
+                            <div class="loading-3d">Загрузка 3D модели...</div>
+                        </div>
+                        
+                        <div class="model-controls">
+                            <button class="model-btn" id="changeModel">👩 Сменить модель</button>
+                            <button class="model-btn" id="toggleRotation">🔄 Вращение</button>
+                            <button class="model-btn" id="saveOutfit">💾 Сохранить образ</button>
+                        </div>
+                    </div>
+
+                    <div class="current-outfit">
+                        <h3>Текущий образ:</h3>
+                        <div class="outfit-items" id="outfitItems">
+                            <!-- Элементы текущего образа -->
+                        </div>
                     </div>
                 </div>
             </div>
