@@ -137,8 +137,8 @@ const BASE_PRODUCTS = {
 
 // Базовая модель
 const MODEL_BASES = {
-    female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-    male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
+    female: "female.png",
+    male: "male.png"
 };
 
 // Хранилище
@@ -1312,8 +1312,8 @@ class FashionApp {
                     female: modelImageData,
                     male: modelImageData
                 } : {
-                    female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-                    male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
+                    female: "female.png",
+                    male: "male.png"
                 },
                 sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
                 colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
