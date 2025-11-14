@@ -34,7 +34,7 @@ const BASE_PRODUCTS = {
             fitting: { type: "bottoms", layer: "bottom-layer" }
         }
     ],
-    adminUsers: [123456789]
+    adminUsers: [447355860]
 };
 
 // Хранилище
