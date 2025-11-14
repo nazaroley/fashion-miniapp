@@ -44,7 +44,7 @@ const BASE_PRODUCTS = {
             }
         }
     ],
-    adminUsers: [123456789] // ЗАМЕНИТЕ НА ВАШ TELEGRAM ID
+    adminUsers: [447355860] // ЗАМЕНИТЕ НА ВАШ TELEGRAM ID
 };
 
 // Анализатор изображений
