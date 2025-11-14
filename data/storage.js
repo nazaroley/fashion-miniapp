@@ -1,7 +1,3 @@
-if (typeof BASE_PRODUCTS === 'undefined') {
-    console.error('BASE_PRODUCTS не определен!');
-    var BASE_PRODUCTS = { products: [] };
-}
 // Работа с localStorage
 const Storage = {
     // Ключи для хранения данных
