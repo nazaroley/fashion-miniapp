@@ -152,12 +152,21 @@ const Storage = {
     },
 
     getProducts() {
-        const stored = localStorage.getItem(this.KEYS.PRODUCTS);
-        return stored ? JSON.parse(stored) : BASE_PRODUCTS.products;
+        try {
+            const stored = localStorage.getItem(this.KEYS.PRODUCTS);
+            return stored ? JSON.parse(stored) : BASE_PRODUCTS.products;
+        } catch (error) {
+            console.error('Error loading products:', error);
+            return BASE_PRODUCTS.products;
+        }
     },
 
     saveProducts(products) {
-        localStorage.setItem(this.KEYS.PRODUCTS, JSON.stringify(products));
+        try {
+            localStorage.setItem(this.KEYS.PRODUCTS, JSON.stringify(products));
+        } catch (error) {
+            console.error('Error saving products:', error);
+        }
     },
 
     addProduct(product) {
@@ -190,8 +199,13 @@ const Storage = {
     },
 
     getOrders() {
-        const stored = localStorage.getItem(this.KEYS.ORDERS);
-        return stored ? JSON.parse(stored) : [];
+        try {
+            const stored = localStorage.getItem(this.KEYS.ORDERS);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            return [];
+        }
     },
 
     saveOrder(order) {
@@ -217,30 +231,57 @@ const Storage = {
     },
 
     getCart() {
-        const stored = localStorage.getItem(this.KEYS.CART);
-        return stored ? JSON.parse(stored) : [];
+        try {
+            const stored = localStorage.getItem(this.KEYS.CART);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            return [];
+        }
     },
 
     saveCart(cart) {
-        localStorage.setItem(this.KEYS.CART, JSON.stringify(cart));
+        try {
+            localStorage.setItem(this.KEYS.CART, JSON.stringify(cart));
+        } catch (error) {
+            console.error('Error saving cart:', error);
+        }
     },
 
     getFavorites() {
-        const stored = localStorage.getItem(this.KEYS.FAVORITES);
-        return stored ? JSON.parse(stored) : [];
+        try {
+            const stored = localStorage.getItem(this.KEYS.FAVORITES);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading favorites:', error);
+            return [];
+        }
     },
 
     saveFavorites(favorites) {
-        localStorage.setItem(this.KEYS.FAVORITES, JSON.stringify(favorites));
+        try {
+            localStorage.setItem(this.KEYS.FAVORITES, JSON.stringify(favorites));
+        } catch (error) {
+            console.error('Error saving favorites:', error);
+        }
     },
 
     getSettings() {
-        const stored = localStorage.getItem(this.KEYS.SETTINGS);
-        return stored ? JSON.parse(stored) : {};
+        try {
+            const stored = localStorage.getItem(this.KEYS.SETTINGS);
+            return stored ? JSON.parse(stored) : {};
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            return {};
+        }
     },
 
     saveSettings(settings) {
-        localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
+        try {
+            localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
+        } catch (error) {
+            console.error('Error saving settings:', error);
+        }
     }
 };
 
@@ -268,12 +309,14 @@ class FashionApp {
 
     async init() {
         try {
+            console.log('Initializing FashionApp...');
             this.initTelegram();
             await this.loadData();
             this.initUI();
             this.bindEvents();
             this.initImageUpload();
             this.hideLoading();
+            console.log('FashionApp initialized successfully');
         } catch (error) {
             console.error('Error initializing app:', error);
             this.hideLoading();
@@ -331,12 +374,23 @@ class FashionApp {
     async loadData() {
         return new Promise((resolve) => {
             setTimeout(() => {
-                this.state.products = Storage.getProducts();
-                this.state.filteredProducts = this.state.products;
-                this.state.cart = Storage.getCart();
-                this.state.favorites = Storage.getFavorites();
-                this.updateCategoryCounts();
-                resolve();
+                try {
+                    this.state.products = Storage.getProducts();
+                    this.state.filteredProducts = this.state.products;
+                    this.state.cart = Storage.getCart();
+                    this.state.favorites = Storage.getFavorites();
+                    this.updateCategoryCounts();
+                    console.log('Data loaded successfully:', this.state.products.length, 'products');
+                    resolve();
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    // Fallback to base products
+                    this.state.products = BASE_PRODUCTS.products;
+                    this.state.filteredProducts = BASE_PRODUCTS.products;
+                    this.state.cart = [];
+                    this.state.favorites = [];
+                    resolve();
+                }
             }, 1000);
         });
     }
@@ -351,7 +405,7 @@ class FashionApp {
     fixViewportHeight() {
         const setVH = () => {
             const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px');
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
         };
         
         setVH();
@@ -1453,21 +1507,18 @@ class FashionApp {
 // Запуск приложения
 let app;
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        app = new FashionApp();
-    });
-} else {
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded - Initializing app...');
     app = new FashionApp();
-}
+});
 
-// Принудительное скрытие загрузки через 5 секунд
+// Принудительное скрытие загрузки через 5 секунд на случай ошибки
 setTimeout(() => {
     const loading = document.getElementById('loading');
     const mainApp = document.getElementById('main-app');
     
     if (loading && !loading.classList.contains('hidden')) {
-        console.log('Forcing loading screen hide');
+        console.log('Forcing loading screen hide after timeout');
         loading.classList.add('hidden');
         if (mainApp) {
             mainApp.classList.remove('hidden');
