@@ -1,32 +1,17 @@
-// storage.js - ДОБАВЬТЕ ЭТО В САМОЕ НАЧАЛО
-console.log('Storage loading, BASE_PRODUCTS:', typeof BASE_PRODUCTS);
+// Работа с localStorage
+console.log('🔄 Storage loading...');
 
 // Защита от отсутствия BASE_PRODUCTS
 if (typeof BASE_PRODUCTS === 'undefined') {
-    console.error('❌ BASE_PRODUCTS не загружен!');
+    console.warn('⚠️ BASE_PRODUCTS не загружен, использую пустой массив');
     var BASE_PRODUCTS = {
-        products: [
-            {
-                id: 1,
-                name: "Аварийный товар",
-                price: 1000,
-                category: "tops",
-                images: ["https://via.placeholder.com/300"],
-                description: "Товар по умолчанию",
-                sizes: ["M"],
-                colors: ["Черный"],
-                material: "Хлопок",
-                care: "Стирка",
-                inStock: true
-            }
-        ],
+        products: [],
         categories: [],
+        models: [],
         adminUsers: []
     };
-} else {
-    console.log('✅ BASE_PRODUCTS загружен успешно');
 }
-// Работа с localStorage
+
 const Storage = {
     // Ключи для хранения данных
     KEYS: {
@@ -39,17 +24,26 @@ const Storage = {
 
     // Получить все товары (из localStorage + базовые)
     getProducts() {
-        const stored = localStorage.getItem(this.KEYS.PRODUCTS);
-        if (stored) {
-            return JSON.parse(stored);
+        try {
+            const stored = localStorage.getItem(this.KEYS.PRODUCTS);
+            if (stored) {
+                const products = JSON.parse(stored);
+                console.log('📦 Products loaded from storage:', products.length);
+                return products;
+            }
+            // Если нет в хранилище, возвращаем базовые товары
+            console.log('📦 Using BASE_PRODUCTS:', BASE_PRODUCTS.products.length);
+            return BASE_PRODUCTS.products || [];
+        } catch (error) {
+            console.error('❌ Error loading products:', error);
+            return [];
         }
-        // Если нет в хранилище, возвращаем базовые товары
-        return BASE_PRODUCTS.products;
     },
 
     // Сохранить товары
     saveProducts(products) {
         localStorage.setItem(this.KEYS.PRODUCTS, JSON.stringify(products));
+        console.log('💾 Products saved:', products.length);
     },
 
     // Добавить новый товар
@@ -145,3 +139,5 @@ const Storage = {
         localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
     }
 };
+
+console.log('✅ Storage loaded successfully');
