@@ -1,4 +1,12 @@
-// Базовые данные
+// Глобальный обработчик ошибок изображений
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG') {
+            console.log('Image load error:', e.target.src);
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgMTI1SDE1MFYxNzVIMTAwVjEyNVpNMTUwIDEwMEgyMDBWMTUwSDE1MFYxMDBaTTEwMCA1MEgxNTBWMTBIMTAwVjUwWk0yMDAgNzVIMjUwVjEyNUgyMDBWNzVaTTE1MCAyMDBIMjAwVjI1MEgxNTBWMjAwWk0yNTAgMTUwSDMwMFYyMDBIMjUwVjE1MFpNMjAwIDI1MEgyNTBWMzAwSDIwMFYyNTBaIiBmaWxsPSIjOTlBMUJGIiBmaWxsLW9wYWNpdHk9IjAuMyIvPgo8L3N2Zz4K';
+        }
+    }, true);
+});// Базовые данные
 const BASE_PRODUCTS = {
     products: [
         {
@@ -313,35 +321,64 @@ class FashionApp {
         this.hideLoading();
     }
 
-    initTelegram() {
-        if (window.Telegram?.WebApp) {
+initTelegram() {
+    if (window.Telegram?.WebApp) {
+        try {
             this.tg = window.Telegram.WebApp;
             this.tg.expand();
             this.tg.enableClosingConfirmation();
+            
+            // ВАЖНО: ready() должен вызываться без параметров или с функцией колбэком
             this.tg.ready();
-        } else {
-            this.tg = {
-                showAlert: (msg) => alert(msg),
-                MainButton: { 
-                    setText: () => {}, 
-                    onClick: () => {}, 
-                    show: () => {},
-                    hide: () => {}
-                },
-                initDataUnsafe: { 
-                    user: { 
-                        id: 123456789, 
-                        first_name: 'Test',
-                        last_name: 'User'
-                    } 
-                },
-                sendData: () => console.log('Data sent')
-            };
+            
+            console.log('Telegram WebApp initialized successfully');
+        } catch (error) {
+            console.error('Telegram WebApp init error:', error);
+            this.initMockTelegram();
         }
-
-        // Временно показываем админ-панель всем для тестирования
-        document.getElementById('adminBtn').classList.remove('hidden');
+    } else {
+        this.initMockTelegram();
     }
+},
+
+initMockTelegram() {
+    console.log('Using mock Telegram WebApp');
+    this.tg = {
+        showAlert: (msg) => {
+            console.log('Alert:', msg);
+            alert(msg);
+        },
+        MainButton: { 
+            setText: (text) => console.log('MainButton text:', text),
+            onClick: (callback) => console.log('MainButton callback set'),
+            show: () => console.log('MainButton shown'),
+            hide: () => console.log('MainButton hidden'),
+            setParams: (params) => console.log('MainButton params:', params)
+        },
+        initDataUnsafe: { 
+            user: { 
+                id: 123456789, 
+                first_name: 'Test',
+                last_name: 'User',
+                username: 'testuser'
+            } 
+        },
+        sendData: (data) => {
+            console.log('Data sent to bot:', data);
+            try {
+                // Правильно парсим данные если они приходят как строка
+                const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+                console.log('Parsed data:', parsedData);
+            } catch (e) {
+                console.log('Raw data:', data);
+            }
+        },
+        expand: () => console.log('Expanded'),
+        enableClosingConfirmation: () => console.log('Closing confirmation enabled'),
+        ready: () => console.log('Ready'),
+        close: () => console.log('Close')
+    };
+}
 
     loadData() {
         this.state.products = Storage.getProducts();
