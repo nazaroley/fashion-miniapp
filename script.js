@@ -71,7 +71,7 @@ const BASE_PRODUCTS = {
             }
         }
     ],
-    adminUsers: [447355860]
+    adminUsers: [123456789]
 };
 
 // Хранилище
@@ -209,34 +209,60 @@ class FashionApp {
     }
 
     initTelegram() {
+        // Проверяем, находимся ли мы в Telegram Web App
         if (window.Telegram?.WebApp) {
+            console.log('Running in Telegram Web App');
             this.tg = window.Telegram.WebApp;
             this.tg.expand();
             this.tg.enableClosingConfirmation();
             this.tg.ready();
+            
+            // Устанавливаем тему Telegram
+            this.setTelegramTheme();
         } else {
+            console.log('Running in standalone browser');
+            // Эмуляция Telegram Web App для браузера
             this.tg = {
-                showAlert: (msg) => alert(msg),
+                showAlert: (msg) => {
+                    if (window.alert) {
+                        alert(msg);
+                    } else {
+                        console.log('Alert:', msg);
+                    }
+                },
                 MainButton: { 
                     setText: () => {}, 
                     onClick: () => {}, 
                     show: () => {},
-                    hide: () => {}
+                    hide: () => {},
+                    setParams: () => {}
                 },
                 initDataUnsafe: { 
                     user: { 
-                        id: 123456789, 
-                        first_name: 'Test',
-                        last_name: 'User',
+                        id: Math.floor(Math.random() * 1000000000), 
+                        first_name: 'Пользователь',
+                        last_name: 'Тестовый',
                         username: 'testuser'
                     } 
                 },
-                sendData: () => console.log('Data sent'),
+                sendData: (data) => console.log('Data sent:', data),
                 expand: () => console.log('Expanded'),
                 enableClosingConfirmation: () => console.log('Closing confirmation enabled'),
-                ready: () => console.log('Ready')
+                ready: () => console.log('Ready'),
+                platform: 'unknown',
+                colorScheme: 'light',
+                viewportHeight: window.innerHeight,
+                viewportStableHeight: window.innerHeight
             };
         }
+    }
+
+    setTelegramTheme() {
+        if (!this.tg || !this.tg.colorScheme) return;
+        
+        const isDark = this.tg.colorScheme === 'dark';
+        document.body.style.backgroundColor = isDark ? '#1a1a1a' : '#ffffff';
+        document.body.style.color = isDark ? '#ffffff' : '#1f2937';
     }
 
     loadData() {
@@ -251,6 +277,19 @@ class FashionApp {
         this.renderProducts();
         this.updateCartBadge();
         this.setupMainButton();
+        this.fixViewportHeight();
+    }
+
+    fixViewportHeight() {
+        // Фикс для мобильных браузеров
+        const setVH = () => {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', setVH);
     }
 
     bindEvents() {
@@ -262,14 +301,22 @@ class FashionApp {
         });
 
         // Поиск
-        document.getElementById('searchBtn').addEventListener('click', () => this.toggleSearch());
-        document.getElementById('searchClose').addEventListener('click', () => this.toggleSearch());
-        document.getElementById('searchInput').addEventListener('input', (e) => this.handleSearch(e.target.value));
+        const searchBtn = document.getElementById('searchBtn');
+        const searchClose = document.getElementById('searchClose');
+        const searchInput = document.getElementById('searchInput');
+        
+        if (searchBtn) searchBtn.addEventListener('click', () => this.toggleSearch());
+        if (searchClose) searchClose.addEventListener('click', () => this.toggleSearch());
+        if (searchInput) searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
 
         // Корзина
-        document.getElementById('cartBtn').addEventListener('click', () => this.openCart());
-        document.getElementById('cartClose').addEventListener('click', () => this.closeCart());
-        document.getElementById('checkoutBtn').addEventListener('click', () => this.checkout());
+        const cartBtn = document.getElementById('cartBtn');
+        const cartClose = document.getElementById('cartClose');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        
+        if (cartBtn) cartBtn.addEventListener('click', () => this.openCart());
+        if (cartClose) cartClose.addEventListener('click', () => this.closeCart());
+        if (checkoutBtn) checkoutBtn.addEventListener('click', () => this.checkout());
 
         // Нижняя навигация
         document.querySelectorAll('.nav-item').forEach(item => {
@@ -279,16 +326,24 @@ class FashionApp {
         });
 
         // Модальное окно
-        document.getElementById('modalClose').addEventListener('click', () => this.closeModal());
-        document.getElementById('productModal').addEventListener('click', (e) => {
+        const modalClose = document.getElementById('modalClose');
+        const productModal = document.getElementById('productModal');
+        
+        if (modalClose) modalClose.addEventListener('click', () => this.closeModal());
+        if (productModal) productModal.addEventListener('click', (e) => {
             if (e.target === e.currentTarget) this.closeModal();
         });
 
         // Примерочная
-        document.getElementById('fittingBack').addEventListener('click', () => this.closeFittingRoom());
-        document.getElementById('fittingReset').addEventListener('click', () => this.resetFitting());
-        document.getElementById('changeModel').addEventListener('click', () => this.changeModel());
-        document.getElementById('saveOutfit').addEventListener('click', () => this.saveOutfit());
+        const fittingBack = document.getElementById('fittingBack');
+        const fittingReset = document.getElementById('fittingReset');
+        const changeModel = document.getElementById('changeModel');
+        const saveOutfit = document.getElementById('saveOutfit');
+        
+        if (fittingBack) fittingBack.addEventListener('click', () => this.closeFittingRoom());
+        if (fittingReset) fittingReset.addEventListener('click', () => this.resetFitting());
+        if (changeModel) changeModel.addEventListener('click', () => this.changeModel());
+        if (saveOutfit) saveOutfit.addEventListener('click', () => this.saveOutfit());
 
         // Табы в примерочной
         document.querySelectorAll('.tab-btn').forEach(tab => {
@@ -298,9 +353,13 @@ class FashionApp {
         });
 
         // Админка
-        document.getElementById('adminBtn').addEventListener('click', () => this.showAdminPanel());
-        document.getElementById('adminBack').addEventListener('click', () => this.hideAdminPanel());
-        document.getElementById('productForm').addEventListener('submit', (e) => this.addNewProduct(e));
+        const adminBtn = document.getElementById('adminBtn');
+        const adminBack = document.getElementById('adminBack');
+        const productForm = document.getElementById('productForm');
+        
+        if (adminBtn) adminBtn.addEventListener('click', () => this.showAdminPanel());
+        if (adminBack) adminBack.addEventListener('click', () => this.hideAdminPanel());
+        if (productForm) productForm.addEventListener('submit', (e) => this.addNewProduct(e));
         
         // Табы админки
         document.querySelectorAll('.admin-tab-btn').forEach(tab => {
@@ -308,6 +367,24 @@ class FashionApp {
                 this.switchAdminTab(e.target.dataset.tab);
             });
         });
+
+        // Предотвращение zoom на мобильных устройствах
+        document.addEventListener('touchstart', this.handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+    }
+
+    handleTouchStart(e) {
+        // Предотвращаем двойной тап для zoom
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }
+
+    handleTouchMove(e) {
+        // Предотвращаем pinch to zoom
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
     }
 
     // Загрузка изображений
@@ -386,6 +463,8 @@ class FashionApp {
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
 
+        if (!grid || !emptyState) return;
+
         if (this.state.filteredProducts.length === 0) {
             grid.classList.add('hidden');
             emptyState.classList.remove('hidden');
@@ -432,8 +511,10 @@ class FashionApp {
         if (!product) return;
 
         const modalBody = document.getElementById('modalBody');
+        if (!modalBody) return;
+
         modalBody.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start;">
                 <div>
                     <img src="${product.images[0]}" alt="${product.name}" 
                          style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
@@ -529,9 +610,14 @@ class FashionApp {
 
     renderCartItems() {
         const container = document.getElementById('cartItems');
+        if (!container) return;
+
         const total = this.state.cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
-        document.getElementById('cartTotalPrice').textContent = total.toLocaleString() + ' ₽';
+        const cartTotalPrice = document.getElementById('cartTotalPrice');
+        if (cartTotalPrice) {
+            cartTotalPrice.textContent = total.toLocaleString() + ' ₽';
+        }
 
         if (this.state.cart.length === 0) {
             container.innerHTML = `
@@ -671,7 +757,7 @@ class FashionApp {
         
         // Инициализируем базовое изображение модели
         const modelBase = document.getElementById('modelBase');
-        if (modelBase && !modelBase.src) {
+        if (modelBase) {
             modelBase.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400';
         }
         
@@ -690,6 +776,8 @@ class FashionApp {
     renderFittingProducts(category) {
         const products = this.state.products.filter(p => p.fitting?.type === category && p.modelImages && p.modelImages.length > 0);
         const container = document.getElementById('fittingProducts');
+
+        if (!container) return;
 
         // Очищаем контейнер
         container.innerHTML = '';
@@ -740,13 +828,16 @@ class FashionApp {
             if (category === 'dresses') {
                 this.state.currentOutfit.top = null;
                 this.state.currentOutfit.bottom = null;
-                document.getElementById('top-layer').classList.remove('active');
-                document.getElementById('bottom-layer').classList.remove('active');
+                const topLayer = document.getElementById('top-layer');
+                const bottomLayer = document.getElementById('bottom-layer');
+                if (topLayer) topLayer.classList.remove('active');
+                if (bottomLayer) bottomLayer.classList.remove('active');
             }
             // Если это верх или низ, снимаем платье
             else if (category === 'tops' || category === 'bottoms') {
                 this.state.currentOutfit.dress = null;
-                document.getElementById('dress-layer').classList.remove('active');
+                const dressLayer = document.getElementById('dress-layer');
+                if (dressLayer) dressLayer.classList.remove('active');
             }
 
             // Применяем выбранный товар
@@ -792,7 +883,10 @@ class FashionApp {
         const baseImage = this.state.currentModel === 'female' 
             ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'
             : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400';
-        document.getElementById('modelBase').src = baseImage;
+        const modelBase = document.getElementById('modelBase');
+        if (modelBase) {
+            modelBase.src = baseImage;
+        }
         this.resetFitting();
     }
 
@@ -842,12 +936,17 @@ class FashionApp {
         document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
         
-        document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.add('active');
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        const tabContent = document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+        const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+        
+        if (tabContent) tabContent.classList.add('active');
+        if (tabButton) tabButton.classList.add('active');
     }
 
     loadAdminProducts() {
         const container = document.getElementById('adminProductsList');
+        if (!container) return;
+
         const products = Storage.getProducts();
 
         if (products.length === 0) {
@@ -887,6 +986,8 @@ class FashionApp {
 
     loadOrders() {
         const container = document.getElementById('adminOrdersList');
+        if (!container) return;
+
         const orders = Storage.getOrders();
 
         if (orders.length === 0) {
@@ -918,8 +1019,8 @@ class FashionApp {
     addNewProduct(e) {
         e.preventDefault();
         
-        const mainImageFile = document.getElementById('productImageFile').files[0];
-        const modelImageFile = document.getElementById('productModelImageFile').files[0];
+        const mainImageFile = document.getElementById('productImageFile')?.files[0];
+        const modelImageFile = document.getElementById('productModelImageFile')?.files[0];
 
         if (!mainImageFile) {
             this.showAlert('Пожалуйста, выберите основное изображение товара');
@@ -1033,43 +1134,58 @@ class FashionApp {
     updateCartBadge() {
         const totalItems = this.state.cart.reduce((sum, item) => sum + item.quantity, 0);
         const badge = document.getElementById('cartBadge');
-        badge.textContent = totalItems;
-        badge.style.display = totalItems > 0 ? 'flex' : 'none';
+        if (badge) {
+            badge.textContent = totalItems;
+            badge.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
     }
 
     showAlert(message) {
-        this.tg.showAlert(message);
+        if (this.tg && this.tg.showAlert) {
+            this.tg.showAlert(message);
+        } else {
+            alert(message);
+        }
     }
 
     setupMainButton() {
-        this.tg.MainButton.setText("🛍️ Открыть каталог");
-        this.tg.MainButton.onClick(() => {
-            this.showMainApp();
-        });
-        this.tg.MainButton.show();
+        if (this.tg && this.tg.MainButton) {
+            this.tg.MainButton.setText("🛍️ Открыть каталог");
+            this.tg.MainButton.onClick(() => {
+                this.showMainApp();
+            });
+            this.tg.MainButton.show();
+        }
     }
 
     // Управление видимостью
     hideLoading() {
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
+        const loading = document.getElementById('loading');
+        const mainApp = document.getElementById('main-app');
+        
+        if (loading) loading.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
     }
 
     showModal() {
-        document.getElementById('productModal').classList.remove('hidden');
+        const modal = document.getElementById('productModal');
+        if (modal) modal.classList.remove('hidden');
     }
 
     closeModal() {
-        document.getElementById('productModal').classList.add('hidden');
+        const modal = document.getElementById('productModal');
+        if (modal) modal.classList.add('hidden');
     }
 
     openCart() {
         this.renderCartItems();
-        document.getElementById('cartSidebar').classList.add('active');
+        const cart = document.getElementById('cartSidebar');
+        if (cart) cart.classList.add('active');
     }
 
     closeCart() {
-        document.getElementById('cartSidebar').classList.remove('active');
+        const cart = document.getElementById('cartSidebar');
+        if (cart) cart.classList.remove('active');
     }
 
     showFittingRoom() {
@@ -1086,28 +1202,46 @@ class FashionApp {
     }
 
     showPanel(panelId) {
-        document.getElementById('main-app').classList.add('hidden');
-        document.getElementById(panelId).classList.remove('hidden');
+        const mainApp = document.getElementById('main-app');
+        const panel = document.getElementById(panelId);
+        
+        if (mainApp) mainApp.classList.add('hidden');
+        if (panel) panel.classList.remove('hidden');
     }
 
     hidePanel(panelId) {
-        document.getElementById(panelId).classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
+        const panel = document.getElementById(panelId);
+        const mainApp = document.getElementById('main-app');
+        
+        if (panel) panel.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
     }
 
     toggleSearch() {
         const search = document.getElementById('searchContainer');
-        search.classList.toggle('hidden');
-        if (!search.classList.contains('hidden')) {
-            document.getElementById('searchInput').focus();
-        } else {
-            this.handleSearch('');
+        if (search) {
+            search.classList.toggle('hidden');
+            if (!search.classList.contains('hidden')) {
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.focus();
+            } else {
+                this.handleSearch('');
+            }
         }
     }
 }
 
 // Запуск приложения
 let app;
-document.addEventListener('DOMContentLoaded', () => {
+
+// Ждем полной загрузки DOM
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        app = new FashionApp();
+    });
+} else {
     app = new FashionApp();
-});
+}
+
+// Экспортируем app для глобального доступа
+window.app = app;
