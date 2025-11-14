@@ -201,40 +201,50 @@ class FashionApp {
 
     // Рендер товаров
     renderProducts() {
-        const grid = document.getElementById('productsGrid');
-        const emptyState = document.getElementById('emptyState');
+    const grid = document.getElementById('productsGrid');
+    const emptyState = document.getElementById('emptyState');
 
-        if (this.state.filteredProducts.length === 0) {
-            grid.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-            return;
-        }
+    if (!grid || !emptyState) return;
 
-        grid.classList.remove('hidden');
-        emptyState.classList.add('hidden');
+    if (this.state.filteredProducts.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+    }
 
-        grid.innerHTML = this.state.filteredProducts.map(product => `
-            <div class="product-card" onclick="app.openProductModal(${product.id})">
-                <img src="${product.images[0]}" alt="${product.name}" class="product-image">
-                <div class="product-info">
-                    <h3 class="product-title">${product.name}</h3>
-                    <p class="product-description">${product.description}</p>
-                    <div class="product-price">
-                        <span class="current-price">${product.price} ₽</span>
-                        ${product.oldPrice ? `<span class="old-price">${product.oldPrice} ₽</span>` : ''}
-                    </div>
-                    <div class="product-actions">
-                        <button class="action-btn btn-primary" onclick="event.stopPropagation(); app.addToCart(${product.id})">
-                            В корзину
-                        </button>
-                        <button class="action-btn btn-secondary" onclick="event.stopPropagation(); app.toggleFavorite(${product.id})">
-                            ${this.state.favorites.includes(product.id) ? '💔' : '❤️'}
-                        </button>
-                    </div>
+    grid.classList.remove('hidden');
+    emptyState.classList.add('hidden');
+
+    grid.innerHTML = this.state.filteredProducts.map(product => `
+        <div class="product-card fade-in" onclick="app.openProductModal(${product.id})">
+            <div class="product-image-container">
+                <img src="${product.images[0]}" alt="${product.name}" class="product-image" 
+                     onerror="this.src='https://images.unsplash.com/photo-1566206091558-7f218b696731?w=400&h=300&fit=crop'">
+                <div class="product-badges">
+                    ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
+                    ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
+                    ${product.isHot ? '<span class="badge hot">HOT</span>' : ''}
                 </div>
             </div>
-        `).join('');
-    }
+            <div class="product-info">
+                <h3 class="product-title">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                <div class="product-price">
+                    <span class="current-price">${product.price.toLocaleString()} ₽</span>
+                    ${product.oldPrice ? `<span class="old-price">${product.oldPrice.toLocaleString()} ₽</span>` : ''}
+                </div>
+                <div class="product-actions">
+                    <button class="action-btn btn-primary" onclick="event.stopPropagation(); app.addToCart(${product.id})">
+                        🛒 В корзину
+                    </button>
+                    <button class="action-btn btn-secondary" onclick="event.stopPropagation(); app.toggleFavorite(${product.id})">
+                        ${this.state.favorites.includes(product.id) ? '💔' : '❤️'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
 
     // Модальное окно товара
     openProductModal(productId) {
