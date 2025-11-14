@@ -1,12 +1,4 @@
-// Глобальный обработчик ошибок изображений
-document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('error', function(e) {
-        if (e.target.tagName === 'IMG') {
-            console.log('Image load error:', e.target.src);
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgMTI1SDE1MFYxNzVIMTAwVjEyNVpNMTUwIDEwMEgyMDBWMTUwSDE1MFYxMDBaTTEwMCA1MEgxNTBWMTBIMTAwVjUwWk0yMDAgNzVIMjUwVjEyNUgyMDBWNzVaTTE1MCAyMDBIMjAwVjI1MEgxNTBWMjAwWk0yNTAgMTUwSDMwMFYyMDBIMjUwVjE1MFpNMjAwIDI1MEgyNTBWMzAwSDIwMFYyNTBaIiBmaWxsPSIjOTlBMUJGIiBmaWxsLW9wYWNpdHk9IjAuMyIvPgo8L3N2Zz4K';
-        }
-    }, true);
-});// Базовые данные
+// Базовые данные
 const BASE_PRODUCTS = {
     products: [
         {
@@ -24,10 +16,12 @@ const BASE_PRODUCTS = {
             isNew: true,
             isSale: true,
             isHot: false,
+            tags: ["oversize", "хлопок", "повседневная"],
+            material: "100% хлопок",
+            care: "Машинная стирка при 30°C",
             fitting: {
                 type: "tops",
-                layer: "top-layer",
-                position: { x: 50, y: 25, scale: 0.8 }
+                layer: "top-layer"
             }
         },
         {
@@ -45,178 +39,40 @@ const BASE_PRODUCTS = {
             isNew: false,
             isSale: false,
             isHot: true,
+            tags: ["slim fit", "джинсы", "базовые"],
+            material: "98% хлопок, 2% эластан",
+            care: "Машинная стирка при 30°C",
             fitting: {
                 type: "bottoms",
-                layer: "bottom-layer",
-                position: { x: 50, y: 65, scale: 0.9 }
+                layer: "bottom-layer"
+            }
+        },
+        {
+            id: 3,
+            name: "Красное вечернее платье",
+            description: "Элегантное вечернее платье для особых случаев. Роскошный атлас.",
+            price: 7999,
+            oldPrice: 9999,
+            category: "dresses",
+            images: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400"],
+            modelImages: ["https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=300"],
+            sizes: ["XS", "S", "M", "L"],
+            colors: ["Красный", "Бордовый"],
+            inStock: true,
+            isNew: true,
+            isSale: true,
+            isHot: false,
+            tags: ["вечернее", "атлас", "элегантное"],
+            material: "100% атлас",
+            care: "Только химчистка",
+            fitting: {
+                type: "dresses",
+                layer: "dress-layer"
             }
         }
     ],
-    adminUsers: [447355860] // ЗАМЕНИТЕ НА ВАШ TELEGRAM ID
+    adminUsers: [123456789]
 };
-
-// Анализатор изображений
-class GarmentAnalyzer {
-    async analyzeImage(imageFile) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                try {
-                    const analysis = this.analyzeGarment(img);
-                    resolve(analysis);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            img.onerror = () => reject(new Error('Ошибка загрузки изображения'));
-            img.src = URL.createObjectURL(imageFile);
-        });
-    }
-
-    analyzeGarment(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        // Анализ общего аспекта
-        const overallAspect = img.width / img.height;
-        
-        // Находим объект (не-фон)
-        const bounds = this.findObjectBounds(data, img.width, img.height);
-        const objectAspect = bounds.width / bounds.height;
-        
-        // Определяем категорию по пропорциям
-        const category = this.categorizeGarment(objectAspect, overallAspect);
-        
-        // Определяем настройки для примерочной
-        const fittingConfig = this.getFittingConfig(category);
-        
-        console.log('Анализ изображения:', {
-            overallAspect: overallAspect.toFixed(2),
-            objectAspect: objectAspect.toFixed(2),
-            objectSize: `${bounds.width}x${bounds.height}`,
-            detectedCategory: category
-        });
-
-        return {
-            type: category,
-            layer: fittingConfig.layer,
-            position: fittingConfig.position,
-            autoDetected: true
-        };
-    }
-
-    findObjectBounds(data, width, height) {
-        // Определяем предполагаемый фон (цветы по углам)
-        const backgroundColors = this.getCornerColors(data, width, height);
-        const backgroundColor = this.averageColor(backgroundColors);
-        
-        let minX = width, minY = height, maxX = 0, maxY = 0;
-        let objectPixels = 0;
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const i = (y * width + x) * 4;
-                const pixelColor = [data[i], data[i+1], data[i+2]];
-                
-                // Если пиксель не похож на фон - это часть объекта
-                if (!this.isBackgroundPixel(pixelColor, backgroundColor)) {
-                    minX = Math.min(minX, x);
-                    minY = Math.min(minY, y);
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                    objectPixels++;
-                }
-            }
-        }
-
-        // Если объект не найден, используем все изображение
-        if (minX >= maxX || minY >= maxY) {
-            return { width: width, height: height, x: 0, y: 0 };
-        }
-
-        return {
-            width: maxX - minX,
-            height: maxY - minY,
-            x: minX,
-            y: minY
-        };
-    }
-
-    getCornerColors(data, width, height) {
-        const corners = [
-            [0, 0], [width-1, 0], [0, height-1], [width-1, height-1], // Углы
-            [width/2, 0], [0, height/2], [width-1, height/2], [width/2, height-1] // Края
-        ];
-
-        return corners.map(([x, y]) => {
-            const i = (Math.floor(y) * width + Math.floor(x)) * 4;
-            return [data[i], data[i+1], data[i+2]];
-        });
-    }
-
-    averageColor(colors) {
-        const sum = [0, 0, 0];
-        colors.forEach(color => {
-            sum[0] += color[0];
-            sum[1] += color[1];
-            sum[2] += color[2];
-        });
-        return sum.map(c => Math.round(c / colors.length));
-    }
-
-    isBackgroundPixel(pixelColor, backgroundColor, threshold = 50) {
-        const diff = Math.abs(pixelColor[0] - backgroundColor[0]) +
-                    Math.abs(pixelColor[1] - backgroundColor[1]) +
-                    Math.abs(pixelColor[2] - backgroundColor[2]);
-        return diff < threshold;
-    }
-
-    categorizeGarment(objectAspect, overallAspect) {
-        // Высокие и узкие - обувь или аксессуары
-        if (objectAspect < 0.5) return 'shoes';
-        
-        // Широкие и низкие - верхняя одежда
-        if (objectAspect > 1.8) return 'tops';
-        
-        // Квадратные - платья или верх
-        if (objectAspect > 1.2 && objectAspect <= 1.8) return 'tops';
-        
-        // Умеренные пропорции - низ
-        if (objectAspect >= 0.8 && objectAspect <= 1.2) return 'bottoms';
-        
-        // Все остальное - платья
-        return 'dresses';
-    }
-
-    getFittingConfig(category) {
-        const configs = {
-            'tops': {
-                layer: 'top-layer',
-                position: { x: 50, y: 25, scale: 0.8 }
-            },
-            'bottoms': {
-                layer: 'bottom-layer',
-                position: { x: 50, y: 65, scale: 0.9 }
-            },
-            'dresses': {
-                layer: 'dress-layer',
-                position: { x: 50, y: 40, scale: 0.85 }
-            },
-            'shoes': {
-                layer: 'shoes-layer',
-                position: { x: 50, y: 85, scale: 0.7 }
-            }
-        };
-        
-        return configs[category] || configs.tops;
-    }
-}
 
 // Хранилище
 const Storage = {
@@ -248,6 +104,17 @@ const Storage = {
         return product;
     },
 
+    updateProduct(productId, updates) {
+        const products = this.getProducts();
+        const index = products.findIndex(p => p.id === productId);
+        if (index !== -1) {
+            products[index] = { ...products[index], ...updates };
+            this.saveProducts(products);
+            return true;
+        }
+        return false;
+    },
+
     deleteProduct(productId) {
         const products = this.getProducts();
         const filtered = products.filter(p => p.id !== productId);
@@ -270,6 +137,18 @@ const Storage = {
         return order;
     },
 
+    updateOrderStatus(orderId, status) {
+        const orders = this.getOrders();
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = status;
+            order.updatedAt = new Date().toISOString();
+            localStorage.setItem(this.KEYS.ORDERS, JSON.stringify(orders));
+            return true;
+        }
+        return false;
+    },
+
     getCart() {
         const stored = localStorage.getItem(this.KEYS.CART);
         return stored ? JSON.parse(stored) : [];
@@ -286,13 +165,21 @@ const Storage = {
 
     saveFavorites(favorites) {
         localStorage.setItem(this.KEYS.FAVORITES, JSON.stringify(favorites));
+    },
+
+    getSettings() {
+        const stored = localStorage.getItem(this.KEYS.SETTINGS);
+        return stored ? JSON.parse(stored) : {};
+    },
+
+    saveSettings(settings) {
+        localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
     }
 };
 
 // Главное приложение
 class FashionApp {
     constructor() {
-        this.analyzer = new GarmentAnalyzer();
         this.state = {
             products: [],
             filteredProducts: [],
@@ -321,64 +208,36 @@ class FashionApp {
         this.hideLoading();
     }
 
-initTelegram() {
-    if (window.Telegram?.WebApp) {
-        try {
+    initTelegram() {
+        if (window.Telegram?.WebApp) {
             this.tg = window.Telegram.WebApp;
             this.tg.expand();
             this.tg.enableClosingConfirmation();
-            
-            // ВАЖНО: ready() должен вызываться без параметров или с функцией колбэком
             this.tg.ready();
-            
-            console.log('Telegram WebApp initialized successfully');
-        } catch (error) {
-            console.error('Telegram WebApp init error:', error);
-            this.initMockTelegram();
+        } else {
+            this.tg = {
+                showAlert: (msg) => alert(msg),
+                MainButton: { 
+                    setText: () => {}, 
+                    onClick: () => {}, 
+                    show: () => {},
+                    hide: () => {}
+                },
+                initDataUnsafe: { 
+                    user: { 
+                        id: 123456789, 
+                        first_name: 'Test',
+                        last_name: 'User',
+                        username: 'testuser'
+                    } 
+                },
+                sendData: () => console.log('Data sent'),
+                expand: () => console.log('Expanded'),
+                enableClosingConfirmation: () => console.log('Closing confirmation enabled'),
+                ready: () => console.log('Ready')
+            };
         }
-    } else {
-        this.initMockTelegram();
     }
-},
-
-initMockTelegram() {
-    console.log('Using mock Telegram WebApp');
-    this.tg = {
-        showAlert: (msg) => {
-            console.log('Alert:', msg);
-            alert(msg);
-        },
-        MainButton: { 
-            setText: (text) => console.log('MainButton text:', text),
-            onClick: (callback) => console.log('MainButton callback set'),
-            show: () => console.log('MainButton shown'),
-            hide: () => console.log('MainButton hidden'),
-            setParams: (params) => console.log('MainButton params:', params)
-        },
-        initDataUnsafe: { 
-            user: { 
-                id: 123456789, 
-                first_name: 'Test',
-                last_name: 'User',
-                username: 'testuser'
-            } 
-        },
-        sendData: (data) => {
-            console.log('Data sent to bot:', data);
-            try {
-                // Правильно парсим данные если они приходят как строка
-                const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-                console.log('Parsed data:', parsedData);
-            } catch (e) {
-                console.log('Raw data:', data);
-            }
-        },
-        expand: () => console.log('Expanded'),
-        enableClosingConfirmation: () => console.log('Closing confirmation enabled'),
-        ready: () => console.log('Ready'),
-        close: () => console.log('Close')
-    };
-}
 
     loadData() {
         this.state.products = Storage.getProducts();
@@ -391,6 +250,7 @@ initMockTelegram() {
     initUI() {
         this.renderProducts();
         this.updateCartBadge();
+        this.setupMainButton();
     }
 
     bindEvents() {
@@ -805,65 +665,101 @@ initMockTelegram() {
         this.renderProducts();
     }
 
-    // Примерочная
+    // Примерочная - ИСПРАВЛЕННЫЕ МЕТОДЫ
     openFittingRoom(productId = null) {
+        this.showFittingRoom();
+        
+        // Инициализируем базовое изображение модели
+        const modelBase = document.getElementById('modelBase');
+        if (modelBase && !modelBase.src) {
+            modelBase.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400';
+        }
+        
+        // Показываем товары для первой категории
+        this.renderFittingProducts('tops');
+        
+        // Если передан товар, примеряем его
         if (productId) {
             const product = this.state.products.find(p => p.id === productId);
-            this.tryOnProduct(product);
+            if (product) {
+                this.tryOnProduct(product);
+            }
         }
-        this.showFittingRoom();
-        this.renderFittingProducts('tops');
     }
 
     renderFittingProducts(category) {
         const products = this.state.products.filter(p => p.fitting?.type === category && p.modelImages && p.modelImages.length > 0);
         const container = document.getElementById('fittingProducts');
 
+        // Очищаем контейнер
+        container.innerHTML = '';
+
         if (products.length === 0) {
             container.innerHTML = `
-                <div class="fitting-empty">
+                <div class="fitting-empty" style="grid-column: 1 / -1;">
                     <div class="empty-icon">👗</div>
                     <h3>Нет товаров для примерки</h3>
-                    <p>Добавьте товары с фото на модели в категорию "${this.getCategoryName(category)}"</p>
+                    <p>Добавьте товары с фото на модели</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = products.map(product => `
-            <div class="fitting-product ${this.state.currentOutfit[category]?.id === product.id ? 'active' : ''}" 
-                 onclick="app.tryOnProduct(${product.id})">
+        // Создаем сетку товаров
+        products.forEach(product => {
+            const productElement = document.createElement('div');
+            productElement.className = `fitting-product ${this.state.currentOutfit[category]?.id === product.id ? 'active' : ''}`;
+            productElement.onclick = () => this.tryOnProduct(product.id);
+            
+            productElement.innerHTML = `
                 <img src="${product.images[0]}" alt="${product.name}" 
                      onerror="this.src='https://images.unsplash.com/photo-1566206091558-7f218b696731?w=150&h=150&fit=crop'">
                 <div class="product-title">${product.name}</div>
                 <div class="product-price">${product.price.toLocaleString()} ₽</div>
-            </div>
-        `).join('');
+            `;
+            
+            container.appendChild(productElement);
+        });
     }
 
-    tryOnProduct(product) {
-        if (!product || !product.fitting || !product.modelImages) return;
+    tryOnProduct(productId) {
+        const product = typeof productId === 'number' 
+            ? this.state.products.find(p => p.id === productId)
+            : productId;
 
-        const productObj = typeof product === 'number' 
-            ? this.state.products.find(p => p.id === product)
-            : product;
+        if (!product || !product.fitting) return;
 
-        if (!productObj) return;
+        const layerType = product.fitting.layer;
+        const layer = document.getElementById(layerType);
+        
+        if (layer && product.modelImages && product.modelImages[0]) {
+            // Убираем другие товары в этой категории
+            const category = product.fitting.type;
+            
+            // Если это платье, снимаем верх и низ
+            if (category === 'dresses') {
+                this.state.currentOutfit.top = null;
+                this.state.currentOutfit.bottom = null;
+                document.getElementById('top-layer').classList.remove('active');
+                document.getElementById('bottom-layer').classList.remove('active');
+            }
+            // Если это верх или низ, снимаем платье
+            else if (category === 'tops' || category === 'bottoms') {
+                this.state.currentOutfit.dress = null;
+                document.getElementById('dress-layer').classList.remove('active');
+            }
 
-        const layer = document.getElementById(productObj.fitting.layer);
-        if (layer && productObj.modelImages[0]) {
-            layer.style.backgroundImage = `url('${productObj.modelImages[0]}')`;
-            layer.style.backgroundSize = 'contain';
-            layer.style.backgroundPosition = 'center';
-            layer.style.backgroundRepeat = 'no-repeat';
+            // Применяем выбранный товар
+            layer.style.backgroundImage = `url('${product.modelImages[0]}')`;
             layer.classList.add('active');
+            this.state.currentOutfit[category] = product;
         }
 
-        // Обновляем текущий образ
-        this.state.currentOutfit[productObj.fitting.type] = productObj;
-
-        // Обновляем активный товар в списке
-        this.renderFittingProducts(productObj.fitting.type);
+        // Обновляем активные состояния
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab) {
+            this.renderFittingProducts(activeTab.dataset.category);
+        }
     }
 
     resetFitting() {
@@ -924,6 +820,13 @@ initMockTelegram() {
         this.showAlert('Образ сохранен! Вы можете поделиться им с друзьями.');
     }
 
+    handleFittingTabChange(category) {
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.category === category);
+        });
+        this.renderFittingProducts(category);
+    }
+
     // Админка
     showAdminPanel() {
         this.showPanel('adminPanel');
@@ -971,7 +874,6 @@ initMockTelegram() {
                         ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
                         ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
                         ${product.isHot ? '<span class="badge hot">HOT</span>' : ''}
-                        ${product.fitting?.autoDetected ? '<span class="badge" style="background: #06b6d4;">AI</span>' : ''}
                     </div>
                 </div>
                 <div class="admin-product-actions">
@@ -1013,29 +915,22 @@ initMockTelegram() {
         `).join('');
     }
 
-    async addNewProduct(e) {
+    addNewProduct(e) {
         e.preventDefault();
         
         const mainImageFile = document.getElementById('productImageFile').files[0];
+        const modelImageFile = document.getElementById('productModelImageFile').files[0];
+
         if (!mainImageFile) {
-            this.showAlert('Пожалуйста, выберите изображение товара');
+            this.showAlert('Пожалуйста, выберите основное изображение товара');
             return;
         }
 
-        try {
-            // Показываем уведомление об анализе
-            this.showAlert('🔍 Анализируем изображение...');
-
-            // Анализируем изображение для автоматической настройки примерочной
-            const analysis = await this.analyzer.analyzeImage(mainImageFile);
-            
-            // Читаем основное изображение
-            const mainImageData = await this.readFileAsDataURL(mainImageFile);
-            
-            // Читаем изображение на модели (если есть)
-            const modelImageFile = document.getElementById('productModelImageFile').files[0];
-            const modelImageData = modelImageFile ? await this.readFileAsDataURL(modelImageFile) : null;
-
+        // Читаем изображения
+        Promise.all([
+            this.readFileAsDataURL(mainImageFile),
+            modelImageFile ? this.readFileAsDataURL(modelImageFile) : Promise.resolve(null)
+        ]).then(([mainImageData, modelImageData]) => {
             const product = {
                 id: Date.now(),
                 name: document.getElementById('productName').value,
@@ -1052,12 +947,7 @@ initMockTelegram() {
                 isNew: document.getElementById('productIsNew')?.checked || false,
                 isSale: document.getElementById('productIsSale')?.checked || false,
                 isHot: document.getElementById('productIsHot')?.checked || false,
-                fitting: {
-                    type: analysis.type,
-                    layer: analysis.layer,
-                    position: analysis.position,
-                    autoDetected: true
-                }
+                fitting: this.getFittingConfig(document.getElementById('productCategory').value)
             };
 
             const products = Storage.getProducts();
@@ -1067,27 +957,34 @@ initMockTelegram() {
             this.state.products = products;
             this.state.filteredProducts = products;
             this.renderProducts();
-            
-            this.showAlert(`✅ Товар добавлен!\n\n🤖 Автоматически определено: ${this.getCategoryName(analysis.type)}\n📍 Слой: ${analysis.layer}\n🎯 Позиция: x${analysis.position.x}, y${analysis.position.y}`);
+            this.showAlert('Товар успешно добавлен!');
             
             // Сбрасываем форму
             e.target.reset();
             this.removeImage();
             this.removeModelImage();
-            
-        } catch (error) {
-            console.error('Error adding product:', error);
-            this.showAlert('❌ Ошибка при добавлении товара: ' + error.message);
-        }
+        }).catch(error => {
+            this.showAlert('Ошибка при добавлении товара: ' + error.message);
+        });
     }
 
     readFileAsDataURL(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(new Error('Ошибка чтения файла'));
+            reader.onerror = (e) => reject(e);
             reader.readAsDataURL(file);
         });
+    }
+
+    getFittingConfig(category) {
+        const configs = {
+            'tops': { type: 'tops', layer: 'top-layer' },
+            'bottoms': { type: 'bottoms', layer: 'bottom-layer' },
+            'dresses': { type: 'dresses', layer: 'dress-layer' },
+            'shoes': { type: 'shoes', layer: 'shoes-layer' }
+        };
+        return configs[category] || { type: category, layer: category + '-layer' };
     }
 
     deleteProduct(productId) {
@@ -1136,22 +1033,26 @@ initMockTelegram() {
     updateCartBadge() {
         const totalItems = this.state.cart.reduce((sum, item) => sum + item.quantity, 0);
         const badge = document.getElementById('cartBadge');
-        if (badge) {
-            badge.textContent = totalItems;
-            badge.style.display = totalItems > 0 ? 'flex' : 'none';
-        }
+        badge.textContent = totalItems;
+        badge.style.display = totalItems > 0 ? 'flex' : 'none';
     }
 
     showAlert(message) {
         this.tg.showAlert(message);
     }
 
+    setupMainButton() {
+        this.tg.MainButton.setText("🛍️ Открыть каталог");
+        this.tg.MainButton.onClick(() => {
+            this.showMainApp();
+        });
+        this.tg.MainButton.show();
+    }
+
     // Управление видимостью
     hideLoading() {
-        const loading = document.getElementById('loading');
-        const mainApp = document.getElementById('main-app');
-        if (loading) loading.classList.add('hidden');
-        if (mainApp) mainApp.classList.remove('hidden');
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
     }
 
     showModal() {
@@ -1202,13 +1103,6 @@ initMockTelegram() {
         } else {
             this.handleSearch('');
         }
-    }
-
-    handleFittingTabChange(category) {
-        document.querySelectorAll('.tab-btn').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.category === category);
-        });
-        this.renderFittingProducts(category);
     }
 }
 
