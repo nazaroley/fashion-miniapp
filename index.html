@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <!-- Анимированный фон -->
@@ -132,27 +134,24 @@
         </div>
     </div>
 
-    <!-- Примерочная -->
+    <!-- 3D Примерочная -->
     <div class="fitting-room-overlay hidden" id="fittingRoom">
         <div class="fitting-container">
             <div class="fitting-header">
                 <button class="fitting-back" id="fittingBack">← Назад</button>
-                <h2>Виртуальная примерочная</h2>
+                <h2>3D Виртуальная примерочная</h2>
                 <button class="fitting-reset" id="fittingReset">🔄 Сброс</button>
             </div>
             
             <div class="fitting-content">
                 <div class="model-section">
-                    <div class="model-view">
-                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400" alt="Модель" class="model-base" id="modelBase">
-                        <div class="product-layer" id="top-layer"></div>
-                        <div class="product-layer" id="bottom-layer"></div>
-                        <div class="product-layer" id="dress-layer"></div>
-                        <div class="product-layer" id="shoes-layer"></div>
+                    <div id="model3dContainer" class="model-3d-container">
+                        <div class="loading-3d">Загрузка 3D...</div>
                     </div>
                     
                     <div class="model-controls">
                         <button class="model-btn" id="changeModel">👩 Сменить модель</button>
+                        <button class="model-btn" id="toggleRotation">🔄 Вращение</button>
                         <button class="model-btn" id="saveOutfit">💾 Сохранить образ</button>
                     </div>
                 </div>
