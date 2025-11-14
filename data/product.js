@@ -88,5 +88,5 @@ const BASE_PRODUCTS = {
     ],
 
     // ID администраторов (замените на ваши Telegram ID)
-    adminUsers: [123456789, 987654321]
+    adminUsers: [447355860]
 };
