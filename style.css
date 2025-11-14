@@ -909,7 +909,7 @@ body {
     margin-bottom: 20px;
 }
 
-/* Примерочная */
+/* 3D ПРИМЕРОЧНАЯ - ИСПРАВЛЕННЫЙ СКРОЛЛ */
 .fitting-room-overlay {
     position: fixed;
     top: 0;
@@ -918,13 +918,16 @@ body {
     height: 100%;
     background: var(--background);
     z-index: 1002;
+    display: flex;
+    flex-direction: column;
 }
 
 .fitting-container {
-    height: 100%;
+    flex: 1;
     display: flex;
     flex-direction: column;
     background: rgba(15, 23, 42, 0.9);
+    height: 100%;
 }
 
 .fitting-header {
@@ -935,6 +938,7 @@ body {
     align-items: center;
     background: rgba(30, 41, 59, 0.8);
     backdrop-filter: blur(10px);
+    flex-shrink: 0;
 }
 
 .fitting-back, .fitting-reset {
@@ -963,73 +967,72 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* ВАЖНО: Исправленный контейнер для скролла */
 .fitting-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 80px);
+    min-height: 0;
+    overflow: hidden;
 }
 
 .model-section {
-    padding: 30px 20px;
+    padding: 20px;
     text-align: center;
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
     flex-shrink: 0;
 }
 
-.model-view {
+/* 3D Контейнер */
+.model-3d-container {
     position: relative;
-    width: 300px;
-    height: 480px;
-    margin: 0 auto 25px;
+    width: 100%;
+    max-width: 300px;
+    height: 400px;
+    margin: 0 auto 20px;
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
-    background: var(--surface);
+    background: linear-gradient(135deg, #334155, #1e293b);
     border: 3px solid var(--border);
 }
 
-.model-base {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.model-3d-container canvas {
+    width: 100% !important;
+    height: 100% !important;
     display: block;
 }
 
-.product-layer {
+.loading-3d {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-light);
+    font-size: 16px;
+    text-align: center;
 }
 
-.product-layer.active {
-    opacity: 1;
-}
-
+/* Улучшенные контролы для 3D */
 .model-controls {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 .model-btn {
-    padding: 12px 20px;
+    padding: 12px 16px;
     background: var(--gradient);
     color: white;
     border: none;
     border-radius: var(--radius);
     cursor: pointer;
     font-weight: 600;
+    font-size: 14px;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
+    min-width: 120px;
 }
 
 .model-btn:hover {
@@ -1038,11 +1041,17 @@ body {
     box-shadow: var(--shadow);
 }
 
+.model-btn.active {
+    background: var(--secondary);
+}
+
+/* ВАЖНО: Исправленный контейнер для товаров со скроллом */
 .fitting-categories {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
 }
 
 .category-tabs {
@@ -1072,14 +1081,16 @@ body {
     color: white;
 }
 
+/* ВАЖНО: Контейнер товаров с работающим скроллом */
 .fitting-products {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    padding: 0 20px 20px;
+    gap: 12px;
+    padding: 0 16px 20px;
     overflow-y: auto;
-    max-height: none;
     flex: 1;
+    max-height: none;
+    min-height: 200px;
 }
 
 .fitting-product {
@@ -1516,11 +1527,19 @@ body {
     
     .fitting-products {
         grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 0 12px 12px;
     }
     
-    .model-view {
-        width: 260px;
-        height: 420px;
+    .model-3d-container {
+        height: 350px;
+        max-width: 280px;
+    }
+    
+    .model-btn {
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 13px;
     }
     
     .header-content {
@@ -1550,13 +1569,14 @@ body {
         padding: 0 20px 16px;
     }
     
-    .model-view {
-        width: 340px;
-        height: 520px;
+    .model-3d-container {
+        height: 450px;
+        max-width: 350px;
     }
     
     .fitting-products {
         grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
     }
 }
 
@@ -1592,6 +1612,7 @@ body {
 
 .fitting-products::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
 }
 
 .fitting-products::-webkit-scrollbar-thumb {
@@ -1656,162 +1677,4 @@ body {
 
 .micro-bounce:hover {
     animation: microBounce 0.3s ease;
-}
-.model-3d-container {
-    position: relative;
-    width: 100%;
-    max-width: 300px;
-    height: 400px;
-    margin: 0 auto 20px;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    background: linear-gradient(135deg, #334155, #1e293b);
-    border: 3px solid var(--border);
-}
-
-.model-3d-container canvas {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-}
-
-.loading-3d {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--text-light);
-    font-size: 16px;
-    text-align: center;
-}
-
-/* Улучшенные контролы для 3D */
-.model-controls {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.model-btn {
-    padding: 12px 16px;
-    background: var(--gradient);
-    color: white;
-    border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    min-width: 120px;
-}
-
-.model-btn:hover {
-    background: var(--gradient-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-}
-
-.model-btn.active {
-    background: var(--secondary);
-}
-
-/* Адаптивность для 3D */
-@media (max-width: 360px) {
-    .model-3d-container {
-        height: 350px;
-        max-width: 280px;
-    }
-    
-    .model-btn {
-        min-width: 100px;
-        padding: 10px 12px;
-        font-size: 13px;
-    }
-}
-
-@media (min-width: 768px) {
-    .model-3d-container {
-        height: 450px;
-        max-width: 350px;
-    }
-}
-
-/* Инструкция для 3D */
-.instructions {
-    text-align: center;
-    color: var(--text-light);
-    font-size: 14px;
-    margin-top: 10px;
-}
-
-/* ФИКС СКРОЛЛА ДЛЯ ТОВАРОВ */
-.fitting-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-}
-
-.model-section {
-    padding: 20px;
-    text-align: center;
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-    flex-shrink: 0;
-}
-
-.fitting-categories {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.fitting-products {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 0 16px 16px;
-    overflow-y: auto;
-    flex: 1;
-    max-height: none;
-}
-
-/* Улучшенный скролл */
-.fitting-products::-webkit-scrollbar {
-    width: 6px;
-}
-
-.fitting-products::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-.fitting-products::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 3px;
-}
-
-.fitting-products::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-dark);
-}
-
-/* Адаптивность для примерочной */
-@media (max-width: 360px) {
-    .fitting-products {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        padding: 0 12px 12px;
-    }
-}
-
-@media (min-width: 768px) {
-    .fitting-products {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-    }
 }
