@@ -137,8 +137,8 @@ const BASE_PRODUCTS = {
 
 // Базовая модель
 const MODEL_BASES = {
-    female: "models/female.png",
-    male: "models/male.png"
+    female: "female.png",
+    male: "male.png"
 };
 
 // Хранилище
