@@ -71,7 +71,7 @@ const BASE_PRODUCTS = {
             }
         }
     ],
-    adminUsers: [123456789]
+    adminUsers: [447355860]
 };
 
 // Хранилище
