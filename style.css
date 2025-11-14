@@ -909,7 +909,7 @@ body {
     margin-bottom: 20px;
 }
 
-/* 3D ПРИМЕРОЧНАЯ - ИСПРАВЛЕННЫЙ СКРОЛЛ */
+/* 3D ПРИМЕРОЧНАЯ - ДВУХЭТАПНЫЙ ИНТЕРФЕЙС */
 .fitting-room-overlay {
     position: fixed;
     top: 0;
@@ -918,17 +918,13 @@ body {
     height: 100%;
     background: var(--background);
     z-index: 1002;
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .fitting-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    min-height: 100vh;
     background: rgba(15, 23, 42, 0.9);
-    height: 100%;
-    overflow: hidden; /* Важно: предотвращаем переполнение */
 }
 
 .fitting-header {
@@ -937,12 +933,14 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(30, 41, 59, 0.8);
+    background: rgba(30, 41, 59, 0.9);
     backdrop-filter: blur(10px);
-    flex-shrink: 0; /* Важно: предотвращаем сжатие */
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
-.fitting-back, .fitting-reset {
+.fitting-back, .fitting-back-to-selection, .fitting-proceed, .fitting-reset {
     background: none;
     border: none;
     padding: 12px 18px;
@@ -953,8 +951,13 @@ body {
     backdrop-filter: blur(10px);
 }
 
-.fitting-back {
+.fitting-back, .fitting-back-to-selection {
     background: var(--gradient);
+    color: white;
+}
+
+.fitting-proceed {
+    background: var(--secondary);
     color: white;
 }
 
@@ -964,27 +967,200 @@ body {
     border: 1px solid var(--border);
 }
 
-.fitting-reset:hover {
-    background: rgba(255, 255, 255, 0.2);
+.fitting-proceed:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-/* ВАЖНО: Исправленный контейнер для скролла */
-.fitting-content {
+.fitting-proceed:hover:not(:disabled),
+.fitting-back:hover,
+.fitting-back-to-selection:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* Этап 1: Выбор одежды */
+.fitting-selection {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.selection-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0; /* Критически важно для flex-скролла */
+}
+
+.selected-items-preview {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(30, 41, 59, 0.7);
+}
+
+.selected-items-preview h3 {
+    margin-bottom: 15px;
+    color: var(--text);
+    font-size: 18px;
+}
+
+.selected-items-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 60px;
+}
+
+.selected-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius);
+    font-size: 14px;
+}
+
+.selected-item img {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.remove-item {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.remove-item:hover {
+    color: var(--secondary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.empty-selection {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 10px;
+}
+
+/* Табы категорий */
+.category-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding: 20px 20px 0;
+    background: var(--background);
+    position: sticky;
+    top: 80px;
+    z-index: 5;
+}
+
+.tab-btn {
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    color: var(--text-light);
+    backdrop-filter: blur(10px);
+}
+
+.tab-btn.active {
+    background: var(--gradient);
+    color: white;
+}
+
+/* Сетка товаров с нормальным скроллом */
+.fitting-products {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 0 16px 20px;
+    flex: 1;
+    overflow-y: visible;
+}
+
+.fitting-product {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    backdrop-filter: blur(10px);
+}
+
+.fitting-product:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.fitting-product.selected {
+    border-color: var(--primary);
+    background: rgba(139, 92, 246, 0.2);
+}
+
+.fitting-product img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+}
+
+.fitting-product .product-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.fitting-product .product-price {
+    font-size: 13px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    margin-top: auto;
+}
+
+/* Этап 2: 3D Просмотр */
+.fitting-view {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.view-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .model-section {
     padding: 20px;
     text-align: center;
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-    flex-shrink: 0; /* Важно: предотвращаем сжатие */
 }
 
-/* 3D Контейнер */
 .model-3d-container {
     position: relative;
     width: 100%;
@@ -1014,7 +1190,6 @@ body {
     text-align: center;
 }
 
-/* Улучшенные контролы для 3D */
 .model-controls {
     display: flex;
     gap: 10px;
@@ -1046,105 +1221,88 @@ body {
     background: var(--secondary);
 }
 
-/* ВАЖНО: Исправленный контейнер для товаров со скроллом */
-.fitting-categories {
-    flex: 1;
+.current-outfit {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(30, 41, 59, 0.7);
+}
+
+.current-outfit h3 {
+    margin-bottom: 15px;
+    color: var(--text);
+    font-size: 18px;
+}
+
+.outfit-items {
     display: flex;
     flex-direction: column;
-    min-height: 0; /* Критически важно */
-    overflow: hidden;
+    gap: 10px;
 }
 
-.category-tabs {
+.outfit-item {
     display: flex;
-    gap: 6px;
-    margin-bottom: 20px;
-    overflow-x: auto;
-    padding: 0 20px;
-    flex-shrink: 0; /* Важно: предотвращаем сжатие */
-}
-
-.tab-btn {
-    padding: 12px 18px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all 0.3s ease;
-    color: var(--text-light);
-    backdrop-filter: blur(10px);
-}
-
-.tab-btn.active {
-    background: var(--gradient);
-    color: white;
-}
-
-/* ВАЖНО: Контейнер товаров с работающим скроллом */
-.fitting-products {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    align-items: center;
     gap: 12px;
-    padding: 0 16px 20px;
-    overflow-y: auto; /* Включаем скролл */
-    flex: 1;
-    max-height: none;
-    min-height: 200px;
-    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
-}
-
-.fitting-product {
+    padding: 12px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--radius);
-    padding: 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    display: flex;
-    flex-direction: column;
-    height: fit-content;
-    backdrop-filter: blur(10px);
 }
 
-.fitting-product:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow);
-}
-
-.fitting-product.active {
-    border-color: var(--primary);
-    background: rgba(139, 92, 246, 0.2);
-}
-
-.fitting-product img {
-    width: 100%;
-    height: 80px;
+.outfit-item img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
     object-fit: cover;
-    border-radius: var(--radius-sm);
-    margin-bottom: 10px;
 }
 
-.fitting-product .product-title {
-    font-size: 13px;
+.outfit-item-info {
+    flex: 1;
+}
+
+.outfit-item-name {
     font-weight: 600;
-    margin-bottom: 6px;
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    margin-bottom: 4px;
 }
 
-.fitting-product .product-price {
-    font-size: 13px;
-    background: var(--gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 700;
-    margin-top: auto;
+.outfit-item-category {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+/* Адаптивность */
+@media (max-width: 360px) {
+    .fitting-products {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 0 12px 12px;
+    }
+    
+    .model-3d-container {
+        height: 350px;
+        max-width: 280px;
+    }
+    
+    .model-btn {
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .category-tabs {
+        padding: 15px 15px 0;
+    }
+}
+
+@media (min-width: 768px) {
+    .fitting-products {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    
+    .model-3d-container {
+        height: 450px;
+        max-width: 350px;
+    }
 }
 
 .fitting-empty {
@@ -1526,31 +1684,6 @@ body {
     .form-row {
         grid-template-columns: 1fr;
     }
-    
-    .fitting-products {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        padding: 0 12px 12px;
-    }
-    
-    .model-3d-container {
-        height: 350px;
-        max-width: 280px;
-    }
-    
-    .model-btn {
-        min-width: 100px;
-        padding: 10px 12px;
-        font-size: 13px;
-    }
-    
-    .header-content {
-        padding: 10px 12px;
-    }
-    
-    .categories-scroll {
-        padding: 0 12px 10px;
-    }
 }
 
 @media (min-width: 768px) {
@@ -1569,16 +1702,6 @@ body {
     
     .categories-scroll {
         padding: 0 20px 16px;
-    }
-    
-    .model-3d-container {
-        height: 450px;
-        max-width: 350px;
-    }
-    
-    .fitting-products {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
     }
 }
 
@@ -1605,113 +1728,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--gradient-dark);
-}
-
-/* Улучшенный скролл для примерочной */
-.fitting-products::-webkit-scrollbar {
-    width: 6px;
-}
-
-.fitting-products::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-.fitting-products::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 3px;
-}
-
-.fitting-products::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-dark);
-}
-
-/* Анимация появления элементов */
-.product-card {
-    animation: fadeIn 0.6s ease-out;
-}
-
-.product-card:nth-child(odd) {
-    animation-delay: 0.1s;
-}
-
-.product-card:nth-child(even) {
-    animation-delay: 0.2s;
-}
-
-/* Эффект неонового свечения для активных элементов */
-.glow-effect {
-    position: relative;
-}
-
-.glow-effect::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: var(--gradient);
-    border-radius: inherit;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.glow-effect:hover::before {
-    opacity: 1;
-}
-
-/* Парящая анимация для кнопок */
-.floating {
-    animation: float 3s ease-in-out infinite;
-}
-
-/* Микро-анимации для интерактивных элементов */
-@keyframes microBounce {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-}
-
-.micro-bounce:hover {
-    animation: microBounce 0.3s ease;
-}
-
-/* ФИКС СКРОЛЛА ДЛЯ ПРИМЕРОЧНОЙ - КРИТИЧЕСКИ ВАЖНЫЕ СТИЛИ */
-.fitting-container {
-    height: 100vh;
-    height: -webkit-fill-available; /* Для мобильных браузеров */
-}
-
-.fitting-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0; /* Разрешаем сжатие flex-элементов */
-}
-
-.fitting-categories {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0; /* Разрешаем сжатие */
-}
-
-.fitting-products {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
-    overscroll-behavior: contain; /* Предотвращаем pull-to-refresh */
-}
-
-/* Гарантированный скролл на всех устройствах */
-@media (max-width: 768px) {
-    .fitting-products {
-        overflow-y: scroll !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
 }
