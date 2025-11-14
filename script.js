@@ -120,7 +120,7 @@ const BASE_PRODUCTS = {
     adminUsers: [447355860]
 };
 
-// УЛУЧШЕННАЯ 3D ПРИМЕРОЧНАЯ С АДАПТИВНЫМИ ТЕКСТУРАМИ
+// ThreeJSFittingRoom класс (без изменений)
 class ThreeJSFittingRoom {
     constructor() {
         this.scene = null;
@@ -1234,7 +1234,7 @@ class FashionApp {
         if (productId) {
             const product = this.state.products.find(p => p.id === productId);
             if (product) {
-                this.addToFitting(product);
+                this.addToFitting(product.id);
             }
         }
         
@@ -1272,9 +1272,12 @@ class FashionApp {
     }
 
     // ИСПРАВЛЕННЫЙ МЕТОД - добавление товара в примерку
-    addToFitting(product) {
+    addToFitting(productId) {
+        console.log('Adding to fitting, productId:', productId);
+        
+        const product = this.state.products.find(p => p.id === productId);
         if (!product || !product.fitting) {
-            console.error('Invalid product:', product);
+            console.error('Product not found:', productId, 'Available products:', this.state.products);
             return;
         }
 
@@ -1294,8 +1297,10 @@ class FashionApp {
         // Если товар уже выбран, снимаем его, иначе добавляем
         if (this.state.currentOutfit[category]?.id === product.id) {
             this.state.currentOutfit[category] = null;
+            console.log('Removed from fitting:', product.name);
         } else {
             this.state.currentOutfit[category] = product;
+            console.log('Added to fitting:', product.name);
         }
 
         this.renderSelectedItems();
@@ -1753,7 +1758,7 @@ class FashionApp {
         }
     }
 
-    // Управление видимостью
+    // Управление видимостье
     hideLoading() {
         const loading = document.getElementById('loading');
         const mainApp = document.getElementById('main-app');
