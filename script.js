@@ -10,8 +10,8 @@ const BASE_PRODUCTS = {
             category: "tops",
             images: ["https://placehold.co/400x500/ffffff/333333?text=White+T-Shirt"],
             modelImages: {
-                female: "clothing/female/tops/white-tshirt.png",
-                male: "clothing/male/tops/white-tshirt.png"
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
             },
             sizes: ["S", "M", "L", "XL"],
             colors: ["Белый", "Черный", "Серый"],
@@ -36,8 +36,8 @@ const BASE_PRODUCTS = {
             category: "bottoms",
             images: ["https://placehold.co/400x500/1e3a8a/ffffff?text=Blue+Jeans"],
             modelImages: {
-                female: "clothing/female/bottoms/blue-jeans.png",
-                male: "clothing/male/bottoms/blue-jeans.png"
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
             },
             sizes: ["28", "30", "32", "34", "36"],
             colors: ["Синий", "Черный", "Светло-синий"],
@@ -62,8 +62,8 @@ const BASE_PRODUCTS = {
             category: "dresses",
             images: ["https://placehold.co/400x500/dc2626/ffffff?text=Red+Dress"],
             modelImages: {
-                female: "clothing/female/dresses/red-dress.png",
-                male: "clothing/male/dresses/red-dress.png"
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
             },
             sizes: ["XS", "S", "M", "L"],
             colors: ["Красный", "Бордовый"],
@@ -88,8 +88,8 @@ const BASE_PRODUCTS = {
             category: "shoes",
             images: ["https://placehold.co/400x500/000000/ffffff?text=Black+Shoes"],
             modelImages: {
-                female: "clothing/female/shoes/black-sneakers.png",
-                male: "clothing/male/shoes/black-sneakers.png"
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
             },
             sizes: ["38", "39", "40", "41", "42", "43"],
             colors: ["Черный", "Белый", "Коричневый"],
@@ -114,8 +114,8 @@ const BASE_PRODUCTS = {
             category: "tops",
             images: ["https://placehold.co/400x500/00ff00/ffffff?text=Green+Shirt"],
             modelImages: {
-                female: "clothing/female/tops/green-shirt.png",
-                male: "clothing/male/tops/green-shirt.png"
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
             },
             sizes: ["S", "M", "L", "XL"],
             colors: ["Зеленый", "Голубой", "Белый"],
@@ -137,8 +137,8 @@ const BASE_PRODUCTS = {
 
 // Базовая модель
 const MODEL_BASES = {
-    female: "female.png",
-    male: "male.png"
+    female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+    male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
 };
 
 // Хранилище
@@ -266,13 +266,18 @@ class FashionApp {
         this.init();
     }
 
-    init() {
-        this.initTelegram();
-        this.loadData();
-        this.initUI();
-        this.bindEvents();
-        this.initImageUpload();
-        this.hideLoading();
+    async init() {
+        try {
+            this.initTelegram();
+            await this.loadData();
+            this.initUI();
+            this.bindEvents();
+            this.initImageUpload();
+            this.hideLoading();
+        } catch (error) {
+            console.error('Error initializing app:', error);
+            this.hideLoading();
+        }
     }
 
     initTelegram() {
@@ -323,12 +328,17 @@ class FashionApp {
         document.body.style.color = isDark ? '#ffffff' : '#1f2937';
     }
 
-    loadData() {
-        this.state.products = Storage.getProducts();
-        this.state.filteredProducts = this.state.products;
-        this.state.cart = Storage.getCart();
-        this.state.favorites = Storage.getFavorites();
-        this.updateCategoryCounts();
+    async loadData() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                this.state.products = Storage.getProducts();
+                this.state.filteredProducts = this.state.products;
+                this.state.cart = Storage.getCart();
+                this.state.favorites = Storage.getFavorites();
+                this.updateCategoryCounts();
+                resolve();
+            }, 1000);
+        });
     }
 
     initUI() {
@@ -424,10 +434,14 @@ class FashionApp {
         const adminBtn = document.getElementById('adminBtn');
         const adminBack = document.getElementById('adminBack');
         const productForm = document.getElementById('productForm');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const removeModelImageBtn = document.getElementById('removeModelImageBtn');
         
         if (adminBtn) adminBtn.addEventListener('click', () => this.showAdminPanel());
         if (adminBack) adminBack.addEventListener('click', () => this.hideAdminPanel());
         if (productForm) productForm.addEventListener('submit', (e) => this.addNewProduct(e));
+        if (removeImageBtn) removeImageBtn.addEventListener('click', () => this.removeImage());
+        if (removeModelImageBtn) removeModelImageBtn.addEventListener('click', () => this.removeModelImage());
         
         // Табы админки
         document.querySelectorAll('.admin-tab-btn').forEach(tab => {
@@ -583,15 +597,15 @@ class FashionApp {
                          style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 </div>
                 <div>
-                    <h2 style="margin-bottom: 12px; color: #1f2937;">${product.name}</h2>
-                    <p style="color: #6b7280; margin-bottom: 20px; line-height: 1.5;">${product.description}</p>
+                    <h2 style="margin-bottom: 12px; color: var(--text);">${product.name}</h2>
+                    <p style="color: var(--text-light); margin-bottom: 20px; line-height: 1.5;">${product.description}</p>
                     
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                        <span style="font-size: 24px; font-weight: 700; color: #6366f1;">
+                        <span style="font-size: 24px; font-weight: 700; color: var(--primary);">
                             ${product.price.toLocaleString()} ₽
                         </span>
                         ${product.oldPrice ? `
-                            <span style="font-size: 16px; color: #9ca3af; text-decoration: line-through;">
+                            <span style="font-size: 16px; color: var(--text-muted); text-decoration: line-through;">
                                 ${product.oldPrice.toLocaleString()} ₽
                             </span>
                         ` : ''}
@@ -601,7 +615,7 @@ class FashionApp {
                         <div style="font-weight: 600; margin-bottom: 8px;">Размеры:</div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             ${product.sizes.map(size => `
-                                <span style="padding: 6px 12px; background: #f3f4f6; border-radius: 8px; font-size: 14px;">
+                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px; font-size: 14px;">
                                     ${size}
                                 </span>
                             `).join('')}
@@ -612,7 +626,7 @@ class FashionApp {
                         <div style="font-weight: 600; margin-bottom: 8px;">Цвета:</div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             ${product.colors.map(color => `
-                                <span style="padding: 6px 12px; background: #f3f4f6; border-radius: 8px; font-size: 14px;">
+                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px; font-size: 14px;">
                                     ${color}
                                 </span>
                             `).join('')}
@@ -621,18 +635,18 @@ class FashionApp {
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button onclick="app.addToCart(${product.id}); app.closeModal()" 
-                                style="padding: 15px; background: #6366f1; color: white; border: none; border-radius: 12px; 
+                                style="padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; 
                                        font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
-                                onmouseover="this.style.background='#4f46e5'" 
-                                onmouseout="this.style.background='#6366f1'">
+                                onmouseover="this.style.background='var(--primary-dark)'" 
+                                onmouseout="this.style.background='var(--primary)'">
                             Добавить в корзину
                         </button>
                         <button onclick="app.openFittingRoom(${product.id})" 
-                                style="padding: 15px; background: #f8fafc; color: #6366f1; border: 2px solid #6366f1; 
+                                style="padding: 15px; background: var(--surface); color: var(--primary); border: 2px solid var(--primary); 
                                        border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
                                        transition: all 0.2s ease;"
-                                onmouseover="this.style.background='#6366f1'; this.style.color='white'" 
-                                onmouseout="this.style.background='#f8fafc'; this.style.color='#6366f1'">
+                                onmouseover="this.style.background='var(--primary)'; this.style.color='white'" 
+                                onmouseout="this.style.background='var(--surface)'; this.style.color='var(--primary)'">
                             👗 2D Примерка
                         </button>
                     </div>
@@ -1152,7 +1166,7 @@ class FashionApp {
             container.innerHTML = `
                 <div class="empty-admin">
                     <p>Нет товаров</p>
-                    <button class="btn-primary" onclick="app.switchAdminTab('add')" style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="app.switchAdminTab('add')" style="margin-top: 15px;">
                         Добавить первый товар
                     </button>
                 </div>
@@ -1161,7 +1175,7 @@ class FashionApp {
         }
 
         container.innerHTML = products.map(product => `
-            <div class="admin-product-card">
+            <div class="admin-product-item">
                 <img src="${product.images[0]}" alt="${product.name}" class="admin-product-image"
                      onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=Image+Error'">
                 <div class="admin-product-info">
@@ -1175,7 +1189,7 @@ class FashionApp {
                     </div>
                 </div>
                 <div class="admin-product-actions">
-                    <button class="btn-small btn-danger" onclick="app.deleteProduct(${product.id})">
+                    <button class="admin-btn admin-btn-delete" onclick="app.deleteProduct(${product.id})">
                         Удалить
                     </button>
                 </div>
@@ -1199,15 +1213,15 @@ class FashionApp {
         }
 
         container.innerHTML = orders.map(order => `
-            <div class="order-card">
+            <div class="admin-product-item">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                     <h4>Заказ #${order.id}</h4>
                     <span style="padding: 4px 12px; background: #fef3c7; color: #92400e; border-radius: 20px; font-size: 12px; font-weight: 600;">
                         Новый
                     </span>
                 </div>
-                <div style="color: #6b7280; margin-bottom: 10px;">
-                    <div>Сумма: <strong style="color: #6366f1;">${order.total.toLocaleString()} ₽</strong></div>
+                <div style="color: var(--text-light); margin-bottom: 10px;">
+                    <div>Сумма: <strong style="color: var(--primary);">${order.total.toLocaleString()} ₽</strong></div>
                     <div>Товаров: ${order.items.length} шт.</div>
                     <div>Дата: ${new Date(order.createdAt).toLocaleDateString()}</div>
                 </div>
@@ -1244,8 +1258,8 @@ class FashionApp {
                     female: modelImageData,
                     male: modelImageData
                 } : {
-                    female: "clothing/female/default.png",
-                    male: "clothing/male/default.png"
+                    female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                    male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
                 },
                 sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
                 colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
@@ -1446,5 +1460,19 @@ if (document.readyState === 'loading') {
 } else {
     app = new FashionApp();
 }
+
+// Принудительное скрытие загрузки через 5 секунд
+setTimeout(() => {
+    const loading = document.getElementById('loading');
+    const mainApp = document.getElementById('main-app');
+    
+    if (loading && !loading.classList.contains('hidden')) {
+        console.log('Forcing loading screen hide');
+        loading.classList.add('hidden');
+        if (mainApp) {
+            mainApp.classList.remove('hidden');
+        }
+    }
+}, 5000);
 
 window.app = app;
