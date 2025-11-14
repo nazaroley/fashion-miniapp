@@ -45,11 +45,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('background.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: blur(8px) brightness(0.4);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     z-index: -2;
 }
 
@@ -1403,8 +1399,7 @@ body {
     border-bottom: 3px solid transparent;
     cursor: pointer;
     font-weight: 500;
-    transition:
-            color: var(--text-light);
+    color: var(--text-light);
     transition: all 0.3s ease;
 }
 
@@ -1617,6 +1612,85 @@ body {
     transform: translateY(-1px);
 }
 
+/* Загрузка изображений */
+.image-upload-container {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.image-upload-container:hover {
+    border-color: var(--primary);
+}
+
+.upload-area {
+    cursor: pointer;
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+.upload-text {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.upload-hint {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.image-preview {
+    position: relative;
+    margin-top: 10px;
+}
+
+.image-preview img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+}
+
+.remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.form-checkboxes {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
 /* Адаптивность */
 @media (min-width: 768px) {
     .products-grid {
@@ -1733,167 +1807,4 @@ body {
 ::selection {
     background: rgba(139, 92, 246, 0.3);
     color: var(--text);
-}
-
-/* Уведомления */
-.notification {
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    background: var(--gradient);
-    color: white;
-    padding: 16px 20px;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
-    z-index: 10000;
-    animation: slideInRight 0.3s ease-out;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.notification.success {
-    background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.notification.error {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-
-.notification.warning {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-/* Анимации для взаимодействий */
-.pulse-once {
-    animation: pulse 0.5s ease-in-out;
-}
-
-.bounce-in {
-    animation: bounceIn 0.6s ease-out;
-}
-
-@keyframes bounceIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.3);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.05);
-    }
-    70% {
-        transform: scale(0.9);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Состояния загрузки */
-.loading {
-    position: relative;
-    overflow: hidden;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent
-    );
-    animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-    0% {
-        left: -100%;
-    }
-    100% {
-        left: 100%;
-    }
-}
-
-/* Темная тема по умолчанию */
-@media (prefers-color-scheme: dark) {
-    :root {
-        color-scheme: dark;
-    }
-}
-
-/* Поддержка сенсорных устройств */
-@media (hover: none) and (pointer: coarse) {
-    .product-card:hover {
-        transform: none;
-    }
-    
-    .icon-btn:hover {
-        transform: none;
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .category-btn:hover {
-        transform: none;
-    }
-    
-    .action-btn:hover:not(:disabled) {
-        transform: none;
-    }
-}
-
-/* Высокий DPI экраны */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .logo-img {
-        image-rendering: -webkit-optimize-contrast;
-    }
-}
-
-/* Поддержка уменьшения движения */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* Улучшенная доступность */
-@media (prefers-contrast: high) {
-    :root {
-        --text: #ffffff;
-        --text-light: #e2e8f0;
-        --text-muted: #cbd5e1;
-        --border: #94a3b8;
-        --surface: #1e293b;
-    }
-}
-
-/* Печать */
-@media print {
-    .bottom-nav,
-    .app-header,
-    .animated-bg,
-    .background-overlay {
-        display: none !important;
-    }
-    
-    body {
-        background: white !important;
-        color: black !important;
-    }
-    
-    .product-card {
-        break-inside: avoid;
-        box-shadow: none !important;
-        border: 1px solid #ddd !important;
-    }
 }
