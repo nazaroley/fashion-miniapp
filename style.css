@@ -1091,6 +1091,7 @@ body {
 }
 
 .fitting-product {
+    position: relative;
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--radius);
     padding: 16px;
@@ -1112,6 +1113,19 @@ body {
 .fitting-product.selected {
     border-color: var(--primary);
     background: rgba(139, 92, 246, 0.2);
+}
+
+.selected-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--primary);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    z-index: 2;
 }
 
 .fitting-product img {
