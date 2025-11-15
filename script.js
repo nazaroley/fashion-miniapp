@@ -10,8 +10,8 @@ const BASE_PRODUCTS = {
             category: "tops",
             images: ["https://placehold.co/400x500/ffffff/333333?text=White+T-Shirt"],
             modelImages: {
-                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
+                female: "https://placehold.co/200x250/8b5cf6/ffffff?text=Футболка+на+модели",
+                male: "https://placehold.co/200x250/8b5cf6/ffffff?text=Футболка+на+модели"
             },
             sizes: ["S", "M", "L", "XL"],
             colors: ["Белый", "Черный", "Серый"],
@@ -36,8 +36,8 @@ const BASE_PRODUCTS = {
             category: "bottoms",
             images: ["https://placehold.co/400x500/1e3a8a/ffffff?text=Blue+Jeans"],
             modelImages: {
-                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
+                female: "https://placehold.co/220x180/06b6d4/ffffff?text=Джинсы+на+модели",
+                male: "https://placehold.co/220x180/06b6d4/ffffff?text=Джинсы+на+модели"
             },
             sizes: ["28", "30", "32", "34", "36"],
             colors: ["Синий", "Черный", "Светло-синий"],
@@ -52,6 +52,58 @@ const BASE_PRODUCTS = {
                 type: "bottoms",
                 layer: "bottom"
             }
+        },
+        {
+            id: 3,
+            name: "Красное платье Миди",
+            description: "Элегантное платье миди-длины для особых случаев.",
+            price: 5999,
+            oldPrice: 6999,
+            category: "dresses",
+            images: ["https://placehold.co/400x500/dc2626/ffffff?text=Red+Dress"],
+            modelImages: {
+                female: "https://placehold.co/180x400/ec4899/ffffff?text=Платье+на+модели",
+                male: "https://placehold.co/180x400/ec4899/ffffff?text=Платье+на+модели"
+            },
+            sizes: ["XS", "S", "M", "L"],
+            colors: ["Красный", "Черный", "Синий"],
+            inStock: true,
+            isNew: true,
+            isSale: true,
+            isHot: false,
+            tags: ["платье", "миди", "вечернее"],
+            material: "Полиэстер",
+            care: "Химчистка",
+            fitting: {
+                type: "dresses",
+                layer: "dress"
+            }
+        },
+        {
+            id: 4,
+            name: "Кроссовки Белые",
+            description: "Стильные белые кроссовки для повседневной носки.",
+            price: 3999,
+            oldPrice: 4999,
+            category: "shoes",
+            images: ["https://placehold.co/400x300/f8fafc/333333?text=White+Sneakers"],
+            modelImages: {
+                female: "https://placehold.co/150x80/f59e0b/ffffff?text=Кроссовки+на+модели",
+                male: "https://placehold.co/150x80/f59e0b/ffffff?text=Кроссовки+на+модели"
+            },
+            sizes: ["36", "37", "38", "39", "40", "41", "42"],
+            colors: ["Белый", "Черный", "Серый"],
+            inStock: true,
+            isNew: false,
+            isSale: true,
+            isHot: true,
+            tags: ["кроссовки", "повседневные", "спорт"],
+            material: "Кожа/текстиль",
+            care: "Влажная чистка",
+            fitting: {
+                type: "shoes",
+                layer: "shoes"
+            }
         }
     ],
     adminUsers: [447355860]
@@ -59,8 +111,8 @@ const BASE_PRODUCTS = {
 
 // Базовая модель
 const MODEL_BASES = {
-    female: "female.png",
-    male: "male.png"
+    female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+    male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
 };
 
 // Улучшенный Canvas процессор для удаления фона
@@ -68,10 +120,10 @@ class AdvancedCanvasProcessor {
     constructor() {
         this.settings = {
             bgDetectionSensitivity: 0.1,
-            colorTolerance: 55,
-            edgeDetectionThreshold: 30,
+            colorTolerance: 40, // Более агрессивное удаление фона
+            edgeDetectionThreshold: 20,
             featherSize: 3,
-            minObjectSize: 100
+            minObjectSize: 50
         };
     }
 
@@ -104,6 +156,23 @@ class AdvancedCanvasProcessor {
             img.onerror = () => reject(new Error('Failed to load image'));
             img.src = URL.createObjectURL(imageFile);
         });
+    }
+
+    // Обработка для примерочной
+    async processForFittingRoom(imageFile, category) {
+        try {
+            // Сначала удаляем фон
+            const transparentImage = await this.removeBackground(imageFile);
+            
+            // Затем оптимизируем для примерочной
+            const optimizedImage = await this.optimizeForFitting(transparentImage, category);
+            
+            return optimizedImage;
+        } catch (error) {
+            console.error('Fitting room processing failed:', error);
+            // Fallback - возвращаем оригинал
+            return await this.readFileAsDataURL(imageFile);
+        }
     }
 
     // Интеллектуальное удаление фона
@@ -460,12 +529,21 @@ class AdvancedCanvasProcessor {
 
     getOptimalDimensions(category) {
         const dimensions = {
-            'tops': { width: 250, height: 300 },
-            'bottoms': { width: 250, height: 200 },
-            'dresses': { width: 300, height: 500 },
-            'shoes': { width: 200, height: 150 }
+            'tops': { width: 200, height: 250 },
+            'bottoms': { width: 220, height: 180 },
+            'dresses': { width: 180, height: 400 },
+            'shoes': { width: 150, height: 80 }
         };
-        return dimensions[category] || { width: 300, height: 300 };
+        return dimensions[category] || { width: 200, height: 200 };
+    }
+
+    readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e);
+            reader.readAsDataURL(file);
+        });
     }
 }
 
@@ -656,15 +734,20 @@ class FashionApp {
     // Проверка доступности локальных моделей
     async checkLocalModels() {
         try {
+            // Пытаемся загрузить локальные модели
             const femaleResponse = await fetch('female.png');
             const maleResponse = await fetch('male.png');
             
-            if (!femaleResponse.ok) {
+            if (femaleResponse.ok) {
+                MODEL_BASES.female = 'female.png';
+            } else {
                 console.warn('Female model not found, using placeholder');
                 MODEL_BASES.female = 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель';
             }
             
-            if (!maleResponse.ok) {
+            if (maleResponse.ok) {
+                MODEL_BASES.male = 'male.png';
+            } else {
                 console.warn('Male model not found, using placeholder');
                 MODEL_BASES.male = 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
             }
@@ -945,7 +1028,7 @@ class FashionApp {
         try {
             const [mainProcessed, modelProcessed] = await Promise.all([
                 this.readFileAsDataURL(mainImageFile),
-                modelImageFile ? this.imageProcessor.removeBackground(modelImageFile) : null
+                modelImageFile ? this.imageProcessor.processForFittingRoom(modelImageFile, 'tops') : null
             ]);
 
             return {
@@ -1263,7 +1346,7 @@ class FashionApp {
         this.renderProducts();
     }
 
-    // 2D ПРИМЕРОЧНАЯ
+    // 2D ПРИМЕРОЧНАЯ - УЛУЧШЕННАЯ ВЕРСИЯ
     openFittingRoom(productId = null) {
         this.showFittingRoom();
         this.showFittingSelection();
@@ -1304,6 +1387,119 @@ class FashionApp {
         
         this.updateModelView();
         this.renderOutfitItems();
+    }
+
+    // Улучшенная функция обновления модели
+    updateModelView() {
+        const modelBase = document.getElementById('modelBase');
+        const clothingLayers = document.getElementById('clothingLayers');
+        
+        if (!modelBase || !clothingLayers) return;
+
+        const baseImage = MODEL_BASES[this.state.currentModel];
+        
+        modelBase.innerHTML = `
+            <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
+                 class="model-base-image"
+                 onerror="this.handleModelImageError(this)">
+        `;
+
+        clothingLayers.innerHTML = '';
+
+        // Правильный порядок слоев: низ -> верх -> платья -> обувь
+        const layersOrder = ['bottoms', 'tops', 'dresses', 'shoes'];
+        
+        layersOrder.forEach(layerType => {
+            const product = this.state.currentOutfit[layerType];
+            if (product) {
+                const layer = document.createElement('div');
+                layer.className = `clothing-layer ${layerType}-layer`;
+                
+                const modelImage = this.getModelImage(product, layerType);
+                
+                layer.innerHTML = `
+                    <img src="${modelImage}" 
+                         alt="${product.name}" 
+                         class="clothing-image ${layerType}-image"
+                         onerror="this.handleClothingImageError(this, '${layerType}')"
+                         style="object-fit: contain;">
+                `;
+                clothingLayers.appendChild(layer);
+            }
+        });
+    }
+
+    // Улучшенная функция получения изображения для модели
+    getModelImage(product, layerType) {
+        // Если есть специальное изображение для модели - используем его
+        if (product.modelImages && product.modelImages[this.state.currentModel]) {
+            return product.modelImages[this.state.currentModel];
+        }
+        
+        // Иначе пытаемся обработать основное изображение
+        return this.processImageForFitting(product.images[0], layerType);
+    }
+
+    // Обработка изображения для примерочной
+    processImageForFitting(imageUrl, layerType) {
+        // Для демо - возвращаем placeholder с прозрачным фоном
+        const dimensions = this.getImageDimensions(layerType);
+        const color = this.getCategoryColor(layerType);
+        const text = encodeURIComponent(this.getCategoryText(layerType));
+        
+        return `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
+    }
+
+    // Улучшенные размеры для разных типов одежды
+    getImageDimensions(layerType) {
+        const dimensions = {
+            'tops': '200x250',
+            'bottoms': '220x180', 
+            'dresses': '180x400',
+            'shoes': '150x80'
+        };
+        return dimensions[layerType] || '200x200';
+    }
+
+    getCategoryColor(layerType) {
+        const colors = {
+            'tops': '8b5cf6',
+            'bottoms': '06b6d4',
+            'dresses': 'ec4899',
+            'shoes': 'f59e0b'
+        };
+        return colors[layerType] || '64748b';
+    }
+
+    getCategoryText(layerType) {
+        const texts = {
+            'tops': 'Футболка+на+модели',
+            'bottoms': 'Штаны+на+модели',
+            'dresses': 'Платье+на+модели',
+            'shoes': 'Обувь+на+модели'
+        };
+        return texts[layerType] || 'Одежда+на+модели';
+    }
+
+    // Обработка ошибок загрузки модели
+    handleModelImageError(imgElement) {
+        console.log('Model image failed to load, using placeholder');
+        const isFemale = this.state.currentModel === 'female';
+        imgElement.src = isFemale 
+            ? 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель'
+            : 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
+        imgElement.onerror = null;
+    }
+
+    // Обработка ошибок загрузки одежды
+    handleClothingImageError(imgElement, layerType) {
+        console.log('Clothing image failed to load, using placeholder');
+        const color = this.getCategoryColor(layerType);
+        const text = this.getCategoryText(layerType);
+        const dimensions = this.getImageDimensions(layerType);
+        
+        imgElement.src = `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
+        imgElement.onerror = null;
     }
 
     // Добавление товара в примерку
@@ -1412,122 +1608,6 @@ class FashionApp {
             proceedButton.style.opacity = '0.5';
             proceedButton.style.cursor = 'not-allowed';
         }
-    }
-
-    // Обновление отображения модели
-    updateModelView() {
-        const modelBase = document.getElementById('modelBase');
-        const clothingLayers = document.getElementById('clothingLayers');
-        
-        if (!modelBase || !clothingLayers) return;
-
-        const baseImage = MODEL_BASES[this.state.currentModel];
-        
-        modelBase.innerHTML = `
-            <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
-                 class="model-base-image"
-                 onerror="this.handleModelImageError(this)">
-        `;
-
-        clothingLayers.innerHTML = '';
-
-        const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
-        
-        layersOrder.forEach(layerType => {
-            const product = this.state.currentOutfit[layerType];
-            if (product) {
-                const layer = document.createElement('div');
-                layer.className = `clothing-layer ${layerType}-layer`;
-                
-                const modelImage = this.getModelImage(product, layerType);
-                
-                layer.innerHTML = `
-                    <img src="${modelImage}" 
-                         alt="${product.name}" 
-                         class="clothing-image ${layerType}-image"
-                         onerror="this.handleClothingImageError(this, '${layerType}')">
-                `;
-                clothingLayers.appendChild(layer);
-            }
-        });
-    }
-
-    // Обработка ошибок загрузки модели
-    handleModelImageError(imgElement) {
-        console.log('Model image failed to load, using placeholder');
-        const isFemale = this.state.currentModel === 'female';
-        imgElement.src = isFemale 
-            ? 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель'
-            : 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
-        imgElement.onerror = null;
-    }
-
-    // Обработка ошибок загрузки одежды
-    handleClothingImageError(imgElement, layerType) {
-        console.log('Clothing image failed to load, using placeholder');
-        const color = this.getCategoryColor(layerType);
-        const text = this.getCategoryText(layerType);
-        const dimensions = this.getImageDimensions(layerType);
-        
-        imgElement.src = `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        imgElement.onerror = null;
-    }
-
-    // Автоматическая адаптация изображений для примерочной
-    getModelImage(product, layerType) {
-        if (product.modelImages && product.modelImages[this.state.currentModel]) {
-            return product.modelImages[this.state.currentModel];
-        }
-        
-        return this.adaptImageForFitting(product.images[0], layerType);
-    }
-
-    // Адаптация обычного фото товара для примерочной
-    adaptImageForFitting(imageUrl, layerType) {
-        if (layerType === 'dresses') {
-            return imageUrl;
-        }
-        
-        const baseUrl = imageUrl.split('?')[0];
-        const dimensions = this.getImageDimensions(layerType);
-        
-        if (imageUrl.includes('placehold.co')) {
-            const color = this.getCategoryColor(layerType);
-            const text = this.getCategoryText(layerType);
-            return `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        }
-        
-        return imageUrl;
-    }
-
-    getImageDimensions(layerType) {
-        const dimensions = {
-            'tops': '250x300',
-            'bottoms': '250x200', 
-            'dresses': '300x500',
-            'shoes': '200x150'
-        };
-        return dimensions[layerType] || '300x300';
-    }
-
-    getCategoryColor(layerType) {
-        const colors = {
-            'tops': '8b5cf6',
-            'bottoms': '06b6d4',
-            'dresses': 'ec4899',
-            'shoes': 'f59e0b'
-        };
-        return colors[layerType] || '64748b';
-    }
-
-    getCategoryText(layerType) {
-        const texts = {
-            'tops': 'Футболка+на+модели',
-            'bottoms': 'Штаны+на+модели',
-            'dresses': 'Платье+на+модели',
-            'shoes': 'Обувь+на+модели'
-        };
-        return texts[layerType] || 'Одежда+на+модели';
     }
 
     // Смена модели
