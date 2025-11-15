@@ -52,84 +52,6 @@ const BASE_PRODUCTS = {
                 type: "bottoms",
                 layer: "bottom"
             }
-        },
-        {
-            id: 3,
-            name: "Красное вечернее платье",
-            description: "Элегантное вечернее платье для особых случаев. Роскошный атлас.",
-            price: 7999,
-            oldPrice: 9999,
-            category: "dresses",
-            images: ["https://placehold.co/400x500/dc2626/ffffff?text=Red+Dress"],
-            modelImages: {
-                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
-            },
-            sizes: ["XS", "S", "M", "L"],
-            colors: ["Красный", "Бордовый"],
-            inStock: true,
-            isNew: true,
-            isSale: true,
-            isHot: false,
-            tags: ["вечернее", "атлас", "элегантное"],
-            material: "100% атлас",
-            care: "Только химчистка",
-            fitting: {
-                type: "dresses",
-                layer: "dress"
-            }
-        },
-        {
-            id: 4,
-            name: "Черные кожаные кроссовки",
-            description: "Стильные кожаные кроссовки для повседневной носки.",
-            price: 5999,
-            oldPrice: 6999,
-            category: "shoes",
-            images: ["https://placehold.co/400x500/000000/ffffff?text=Black+Shoes"],
-            modelImages: {
-                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
-            },
-            sizes: ["38", "39", "40", "41", "42", "43"],
-            colors: ["Черный", "Белый", "Коричневый"],
-            inStock: true,
-            isNew: true,
-            isSale: false,
-            isHot: true,
-            tags: ["кожаные", "повседневные"],
-            material: "Натуральная кожа",
-            care: "Протирать влажной тканью",
-            fitting: {
-                type: "shoes",
-                layer: "shoes"
-            }
-        },
-        {
-            id: 5,
-            name: "Зеленая рубашка",
-            description: "Классическая рубашка из хлопка.",
-            price: 3499,
-            oldPrice: 3999,
-            category: "tops",
-            images: ["https://placehold.co/400x500/00ff00/ffffff?text=Green+Shirt"],
-            modelImages: {
-                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
-                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
-            },
-            sizes: ["S", "M", "L", "XL"],
-            colors: ["Зеленый", "Голубой", "Белый"],
-            inStock: true,
-            isNew: true,
-            isSale: false,
-            isHot: false,
-            tags: ["рубашка", "хлопок"],
-            material: "100% хлопок",
-            care: "Машинная стирка при 30°C",
-            fitting: {
-                type: "tops",
-                layer: "top"
-            }
         }
     ],
     adminUsers: [447355860]
@@ -140,6 +62,412 @@ const MODEL_BASES = {
     female: "female.png",
     male: "male.png"
 };
+
+// Улучшенный Canvas процессор для удаления фона
+class AdvancedCanvasProcessor {
+    constructor() {
+        this.settings = {
+            bgDetectionSensitivity: 0.1,
+            colorTolerance: 55,
+            edgeDetectionThreshold: 30,
+            featherSize: 3,
+            minObjectSize: 100
+        };
+    }
+
+    // Основной метод удаления фона
+    async removeBackground(imageFile) {
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                try {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    this.intelligentBackgroundRemoval(imageData);
+                    this.featherEdges(imageData);
+                    this.removeSmallArtifacts(imageData);
+                    
+                    ctx.putImageData(imageData, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = URL.createObjectURL(imageFile);
+        });
+    }
+
+    // Интеллектуальное удаление фона
+    intelligentBackgroundRemoval(imageData) {
+        const data = imageData.data;
+        const width = imageData.width;
+        const height = imageData.height;
+        
+        const bgColors = this.analyzeBackgroundColors(imageData);
+        const edgeMap = this.detectEdges(imageData);
+        const visited = new Set();
+        
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const index = (y * width + x) * 4;
+                
+                if (visited.has(`${x},${y}`)) continue;
+                
+                const pixel = [data[index], data[index + 1], data[index + 2]];
+                
+                const isBackground = 
+                    this.isBackgroundColor(pixel, bgColors) ||
+                    this.isEdgeBackground(x, y, edgeMap, width, height) ||
+                    this.isSmallIsland(x, y, imageData, visited);
+                
+                if (isBackground) {
+                    data[index + 3] = 0;
+                    visited.add(`${x},${y}`);
+                }
+            }
+        }
+    }
+
+    // Анализ цветов фона
+    analyzeBackgroundColors(imageData) {
+        const strategies = [
+            this.getCornerColors.bind(this),
+            this.getEdgeColors.bind(this),
+            this.getHistogramColors.bind(this)
+        ];
+        
+        const allBgColors = [];
+        
+        for (const strategy of strategies) {
+            const colors = strategy(imageData);
+            allBgColors.push(...colors);
+        }
+        
+        return this.averageColors(allBgColors);
+    }
+
+    // Анализ цветов в углах
+    getCornerColors(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const corners = [
+            [0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]
+        ];
+        
+        const cornerColors = [];
+        const sampleSize = 5;
+        
+        for (const [cx, cy] of corners) {
+            const samples = [];
+            for (let dy = -sampleSize; dy <= sampleSize; dy++) {
+                for (let dx = -sampleSize; dx <= sampleSize; dx++) {
+                    const x = cx + dx;
+                    const y = cy + dy;
+                    if (x >= 0 && x < width && y >= 0 && y < height) {
+                        const index = (y * width + x) * 4;
+                        samples.push([data[index], data[index + 1], data[index + 2]]);
+                    }
+                }
+            }
+            if (samples.length > 0) {
+                cornerColors.push(this.averageColors(samples));
+            }
+        }
+        
+        return cornerColors;
+    }
+
+    // Анализ цветов по краям
+    getEdgeColors(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const edgeSamples = [];
+        const sampleDensity = Math.max(2, Math.floor(width * 0.02));
+        
+        for (let x = 0; x < width; x += sampleDensity) {
+            let index = (0 * width + x) * 4;
+            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
+            
+            index = ((height - 1) * width + x) * 4;
+            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
+        }
+        
+        for (let y = 0; y < height; y += sampleDensity) {
+            let index = (y * width + 0) * 4;
+            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
+            
+            index = (y * width + (width - 1)) * 4;
+            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
+        }
+        
+        return [this.averageColors(edgeSamples)];
+    }
+
+    // Анализ гистограммы цветов
+    getHistogramColors(imageData) {
+        const data = imageData.data;
+        const colorCounts = new Map();
+        
+        for (let i = 0; i < data.length; i += 16) {
+            const r = data[i], g = data[i + 1], b = data[i + 2];
+            const quantized = this.quantizeColor(r, g, b);
+            const key = quantized.join(',');
+            colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+        }
+        
+        const sortedColors = Array.from(colorCounts.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+        
+        return sortedColors.map(([key]) => key.split(',').map(Number));
+    }
+
+    quantizeColor(r, g, b, bins = 16) {
+        return [
+            Math.floor(r / bins) * bins,
+            Math.floor(g / bins) * bins,
+            Math.floor(b / bins) * bins
+        ];
+    }
+
+    averageColors(colors) {
+        if (colors.length === 0) return [255, 255, 255];
+        
+        const total = colors.reduce((acc, color) => {
+            return [acc[0] + color[0], acc[1] + color[1], acc[2] + color[2]];
+        }, [0, 0, 0]);
+        
+        return [
+            Math.round(total[0] / colors.length),
+            Math.round(total[1] / colors.length),
+            Math.round(total[2] / colors.length)
+        ];
+    }
+
+    isBackgroundColor(pixel, bgColors) {
+        for (const bgColor of bgColors) {
+            const distance = this.colorDistance(pixel, bgColor);
+            if (distance < this.settings.colorTolerance) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    colorDistance(color1, color2) {
+        return Math.sqrt(
+            Math.pow(color1[0] - color2[0], 2) +
+            Math.pow(color1[1] - color2[1], 2) +
+            Math.pow(color1[2] - color2[2], 2)
+        );
+    }
+
+    // Обнаружение краев (алгоритм Собеля)
+    detectEdges(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const edgeMap = new Array(width * height).fill(0);
+        
+        const kernelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+        const kernelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+        
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                let gx = 0, gy = 0;
+                
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const pixelIndex = ((y + ky) * width + (x + kx)) * 4;
+                        const luminance = this.getLuminance(
+                            data[pixelIndex],
+                            data[pixelIndex + 1],
+                            data[pixelIndex + 2]
+                        );
+                        
+                        gx += luminance * kernelX[ky + 1][kx + 1];
+                        gy += luminance * kernelY[ky + 1][kx + 1];
+                    }
+                }
+                
+                const gradient = Math.sqrt(gx * gx + gy * gy);
+                edgeMap[y * width + x] = gradient > this.settings.edgeDetectionThreshold ? 1 : 0;
+            }
+        }
+        
+        return edgeMap;
+    }
+
+    getLuminance(r, g, b) {
+        return 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+
+    isEdgeBackground(x, y, edgeMap, width, height) {
+        const index = y * width + x;
+        return edgeMap[index] === 0 && this.isNearEdge(x, y, width, height);
+    }
+
+    isNearEdge(x, y, width, height) {
+        const margin = Math.min(width, height) * this.settings.bgDetectionSensitivity;
+        return x < margin || x > width - margin || y < margin || y > height - margin;
+    }
+
+    // Обнаружение маленьких островков
+    isSmallIsland(startX, startY, imageData, visited) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const queue = [[startX, startY]];
+        const islandPixels = [];
+        
+        while (queue.length > 0) {
+            const [x, y] = queue.shift();
+            const key = `${x},${y}`;
+            
+            if (visited.has(key)) continue;
+            visited.add(key);
+            
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            
+            const index = (y * width + x) * 4;
+            if (data[index + 3] === 0) continue;
+            
+            islandPixels.push([x, y]);
+            
+            if (islandPixels.length < this.settings.minObjectSize * 2) {
+                queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+            }
+        }
+        
+        return islandPixels.length < this.settings.minObjectSize;
+    }
+
+    // Сглаживание краев
+    featherEdges(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        const featherSize = this.settings.featherSize;
+        
+        for (let y = featherSize; y < height - featherSize; y++) {
+            for (let x = featherSize; x < width - featherSize; x++) {
+                const index = (y * width + x) * 4;
+                const currentAlpha = data[index + 3];
+                
+                if (currentAlpha > 0 && currentAlpha < 255) {
+                    let alphaSum = 0;
+                    let count = 0;
+                    
+                    for (let dy = -featherSize; dy <= featherSize; dy++) {
+                        for (let dx = -featherSize; dx <= featherSize; dx++) {
+                            const neighborIndex = ((y + dy) * width + (x + dx)) * 4;
+                            alphaSum += data[neighborIndex + 3];
+                            count++;
+                        }
+                    }
+                    
+                    const averageAlpha = alphaSum / count;
+                    data[index + 3] = Math.round(averageAlpha);
+                }
+            }
+        }
+    }
+
+    // Удаление мелких артефактов
+    removeSmallArtifacts(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                const index = (y * width + x) * 4;
+                
+                if (data[index + 3] === 0) continue;
+                
+                const transparentNeighbors = this.countTransparentNeighbors(x, y, imageData);
+                
+                if (transparentNeighbors >= 6) {
+                    data[index + 3] = 0;
+                }
+            }
+        }
+    }
+
+    countTransparentNeighbors(x, y, imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+        let count = 0;
+        
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                
+                const nx = x + dx, ny = y + dy;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    const neighborIndex = (ny * width + nx) * 4;
+                    if (data[neighborIndex + 3] === 0) {
+                        count++;
+                    }
+                }
+            }
+        }
+        
+        return count;
+    }
+
+    // Оптимизация для примерочной
+    async optimizeForFitting(imageDataUrl, category) {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                const dimensions = this.getOptimalDimensions(category);
+                canvas.width = dimensions.width;
+                canvas.height = dimensions.height;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const scale = Math.min(
+                    canvas.width / img.width,
+                    canvas.height / img.height
+                ) * 0.9;
+                
+                const x = (canvas.width - img.width * scale) / 2;
+                const y = (canvas.height - img.height * scale) / 2;
+
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                resolve(canvas.toDataURL('image/png'));
+            };
+
+            img.src = imageDataUrl;
+        });
+    }
+
+    getOptimalDimensions(category) {
+        const dimensions = {
+            'tops': { width: 250, height: 300 },
+            'bottoms': { width: 250, height: 200 },
+            'dresses': { width: 300, height: 500 },
+            'shoes': { width: 200, height: 150 }
+        };
+        return dimensions[category] || { width: 300, height: 300 };
+    }
+}
 
 // Хранилище
 const Storage = {
@@ -304,6 +632,7 @@ class FashionApp {
             }
         };
 
+        this.imageProcessor = new AdvancedCanvasProcessor();
         this.init();
     }
 
@@ -341,7 +670,6 @@ class FashionApp {
             }
         } catch (error) {
             console.warn('Error checking local models:', error);
-            // Используем placeholder'ы в случае ошибки
             MODEL_BASES.female = 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель';
             MODEL_BASES.male = 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
         }
@@ -408,7 +736,6 @@ class FashionApp {
                     resolve();
                 } catch (error) {
                     console.error('Error loading data:', error);
-                    // Fallback to base products
                     this.state.products = BASE_PRODUCTS.products;
                     this.state.filteredProducts = BASE_PRODUCTS.products;
                     this.state.cart = [];
@@ -611,6 +938,38 @@ class FashionApp {
         document.getElementById('productModelImageFile').value = '';
         document.getElementById('modelImagePreview').classList.add('hidden');
         document.getElementById('uploadModelArea').classList.remove('hidden');
+    }
+
+    // Обработка изображений с улучшенным алгоритмом
+    async processProductImages(mainImageFile, modelImageFile = null) {
+        try {
+            const [mainProcessed, modelProcessed] = await Promise.all([
+                this.readFileAsDataURL(mainImageFile),
+                modelImageFile ? this.imageProcessor.removeBackground(modelImageFile) : null
+            ]);
+
+            return {
+                main: mainProcessed,
+                model: modelProcessed || mainProcessed
+            };
+        } catch (error) {
+            console.error('Image processing failed:', error);
+            // Fallback на оригинальные изображения
+            const mainFallback = await this.readFileAsDataURL(mainImageFile);
+            return {
+                main: mainFallback,
+                model: mainFallback
+            };
+        }
+    }
+
+    readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e);
+            reader.readAsDataURL(file);
+        });
     }
 
     // Рендер товаров
@@ -909,7 +1268,6 @@ class FashionApp {
         this.showFittingRoom();
         this.showFittingSelection();
         
-        // Сбрасываем выбранные вещи
         this.state.currentOutfit = {
             tops: null,
             bottoms: null, 
@@ -917,7 +1275,6 @@ class FashionApp {
             shoes: null
         };
         
-        // Если передан товар, добавляем его автоматически
         if (productId) {
             const product = this.state.products.find(p => p.id === productId);
             if (product) {
@@ -936,7 +1293,6 @@ class FashionApp {
     }
 
     showFittingView() {
-        // Проверяем, есть ли выбранные вещи
         const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
         if (!hasItems) {
             this.showAlert('Выберите хотя бы одну вещь для примерки');
@@ -946,7 +1302,6 @@ class FashionApp {
         document.getElementById('fittingSelection').classList.add('hidden');
         document.getElementById('fittingView').classList.remove('hidden');
         
-        // Обновляем отображение модели
         this.updateModelView();
         this.renderOutfitItems();
     }
@@ -961,17 +1316,14 @@ class FashionApp {
 
         const category = product.fitting.type;
         
-        // Для платьев снимаем верх и низ
         if (category === 'dresses') {
             this.state.currentOutfit.tops = null;
             this.state.currentOutfit.bottoms = null;
         }
-        // Если добавляем верх или низ - снимаем платье
         else if (category === 'tops' || category === 'bottoms') {
             this.state.currentOutfit.dresses = null;
         }
         
-        // Если товар уже выбран, снимаем его, иначе добавляем
         if (this.state.currentOutfit[category]?.id === product.id) {
             this.state.currentOutfit[category] = null;
         } else {
@@ -981,7 +1333,6 @@ class FashionApp {
         this.renderSelectedItems();
         this.updateProceedButton();
         
-        // Обновляем отображение товаров в активной вкладке
         const activeTab = document.querySelector('.tab-btn.active');
         if (activeTab) {
             this.renderFittingProducts(activeTab.dataset.category);
@@ -993,7 +1344,6 @@ class FashionApp {
         this.renderSelectedItems();
         this.updateProceedButton();
         
-        // Обновляем отображение товаров в активной вкладке
         const activeTab = document.querySelector('.tab-btn.active');
         if (activeTab) {
             this.renderFittingProducts(activeTab.dataset.category);
@@ -1071,7 +1421,6 @@ class FashionApp {
         
         if (!modelBase || !clothingLayers) return;
 
-        // Устанавливаем базовую модель из локальных файлов
         const baseImage = MODEL_BASES[this.state.currentModel];
         
         modelBase.innerHTML = `
@@ -1080,10 +1429,8 @@ class FashionApp {
                  onerror="this.handleModelImageError(this)">
         `;
 
-        // Очищаем слои одежды
         clothingLayers.innerHTML = '';
 
-        // Добавляем слои одежды в правильном порядке
         const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
         
         layersOrder.forEach(layerType => {
@@ -1092,7 +1439,6 @@ class FashionApp {
                 const layer = document.createElement('div');
                 layer.className = `clothing-layer ${layerType}-layer`;
                 
-                // Автоматически адаптируем изображение для примерочной
                 const modelImage = this.getModelImage(product, layerType);
                 
                 layer.innerHTML = `
@@ -1113,7 +1459,7 @@ class FashionApp {
         imgElement.src = isFemale 
             ? 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель'
             : 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
-        imgElement.onerror = null; // Prevent infinite loop
+        imgElement.onerror = null;
     }
 
     // Обработка ошибок загрузки одежды
@@ -1124,39 +1470,33 @@ class FashionApp {
         const dimensions = this.getImageDimensions(layerType);
         
         imgElement.src = `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        imgElement.onerror = null; // Prevent infinite loop
+        imgElement.onerror = null;
     }
 
     // Автоматическая адаптация изображений для примерочной
     getModelImage(product, layerType) {
-        // Если есть специальное фото на модели - используем его
         if (product.modelImages && product.modelImages[this.state.currentModel]) {
             return product.modelImages[this.state.currentModel];
         }
         
-        // Если нет специального фото - адаптируем основное изображение
         return this.adaptImageForFitting(product.images[0], layerType);
     }
 
     // Адаптация обычного фото товара для примерочной
     adaptImageForFitting(imageUrl, layerType) {
-        // Для платьев - используем оригинальное изображение
         if (layerType === 'dresses') {
             return imageUrl;
         }
         
-        // Для других категорий создаем адаптированные версии
-        const baseUrl = imageUrl.split('?')[0]; // Убираем параметры placehold.co
+        const baseUrl = imageUrl.split('?')[0];
         const dimensions = this.getImageDimensions(layerType);
         
-        // Если это placeholder - создаем адаптированный placeholder
         if (imageUrl.includes('placehold.co')) {
             const color = this.getCategoryColor(layerType);
             const text = this.getCategoryText(layerType);
             return `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
         }
         
-        // Для реальных изображений возвращаем оригинал (в реальном приложении здесь будет обработка)
         return imageUrl;
     }
 
@@ -1194,22 +1534,18 @@ class FashionApp {
     changeModel(modelType) {
         this.state.currentModel = modelType;
         
-        // Обновляем активную кнопку
         document.querySelectorAll('.model-btn[data-model]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.model === modelType);
         });
         
-        // Обновляем отображение
         this.updateModelView();
     }
 
     setActiveFittingTab(category) {
-        // Обновляем кнопки табов
         document.querySelectorAll('.tab-btn').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.category === category);
         });
         
-        // Рендерим товары для выбранной категории
         this.renderFittingProducts(category);
     }
 
@@ -1249,7 +1585,6 @@ class FashionApp {
 
     // Сброс примерки
     resetFitting() {
-        // Сбрасываем выбранные вещи
         this.state.currentOutfit = {
             tops: null,
             bottoms: null,
@@ -1262,7 +1597,6 @@ class FashionApp {
         this.updateProceedButton();
         this.updateModelView();
         
-        // Показываем сообщение
         this.showAlert('Примерка сброшена');
     }
 
@@ -1411,61 +1745,52 @@ class FashionApp {
             return;
         }
 
-        // Читаем изображения
-        Promise.all([
-            this.readFileAsDataURL(mainImageFile),
-            modelImageFile ? this.readFileAsDataURL(modelImageFile) : Promise.resolve(null)
-        ]).then(([mainImageData, modelImageData]) => {
-            const product = {
-                id: Date.now(),
-                name: document.getElementById('productName').value,
-                description: document.getElementById('productDescription').value,
-                price: parseInt(document.getElementById('productPrice').value),
-                oldPrice: document.getElementById('productOldPrice').value ? 
-                    parseInt(document.getElementById('productOldPrice').value) : null,
-                category: document.getElementById('productCategory').value,
-                images: [mainImageData],
-                // Автоматически создаем адаптированные изображения для примерочной
-                modelImages: this.createModelImages(mainImageData, modelImageData, document.getElementById('productCategory').value),
-                sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
-                colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
-                inStock: true,
-                isNew: document.getElementById('productIsNew')?.checked || false,
-                isSale: document.getElementById('productIsSale')?.checked || false,
-                isHot: document.getElementById('productIsHot')?.checked || false,
-                fitting: this.getFittingConfig(document.getElementById('productCategory').value)
-            };
+        // Показываем индикатор обработки
+        this.showProcessingIndicator();
 
-            const products = Storage.getProducts();
-            products.push(product);
-            Storage.saveProducts(products);
-            
-            this.state.products = products;
-            this.state.filteredProducts = products;
-            this.renderProducts();
-            this.showAlert('Товар успешно добавлен!');
-            
-            // Сбрасываем форму
-            e.target.reset();
-            this.removeImage();
-            this.removeModelImage();
-        }).catch(error => {
-            this.showAlert('Ошибка при добавлении товара: ' + error.message);
-        });
-    }
+        this.processProductImages(mainImageFile, modelImageFile)
+            .then(({ main, model }) => {
+                const product = {
+                    id: Date.now(),
+                    name: document.getElementById('productName').value,
+                    description: document.getElementById('productDescription').value,
+                    price: parseInt(document.getElementById('productPrice').value),
+                    oldPrice: document.getElementById('productOldPrice').value ? 
+                        parseInt(document.getElementById('productOldPrice').value) : null,
+                    category: document.getElementById('productCategory').value,
+                    images: [main],
+                    modelImages: this.createModelImages(main, model, document.getElementById('productCategory').value),
+                    sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
+                    colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
+                    inStock: true,
+                    isNew: document.getElementById('productIsNew')?.checked || false,
+                    isSale: document.getElementById('productIsSale')?.checked || false,
+                    isHot: document.getElementById('productIsHot')?.checked || false,
+                    fitting: this.getFittingConfig(document.getElementById('productCategory').value)
+                };
 
-    readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(e);
-            reader.readAsDataURL(file);
-        });
+                const products = Storage.getProducts();
+                products.push(product);
+                Storage.saveProducts(products);
+                
+                this.state.products = products;
+                this.state.filteredProducts = products;
+                this.renderProducts();
+                this.hideProcessingIndicator();
+                this.showAlert('Товар успешно добавлен! Фон автоматически обработан для примерочной!');
+                
+                e.target.reset();
+                this.removeImage();
+                this.removeModelImage();
+            })
+            .catch(error => {
+                this.hideProcessingIndicator();
+                this.showAlert('Ошибка при добавлении товара: ' + error.message);
+            });
     }
 
     // Создание изображений для примерочной
     createModelImages(mainImage, customModelImage, category) {
-        // Если загружено специальное фото на модели - используем его
         if (customModelImage) {
             return {
                 female: customModelImage,
@@ -1473,14 +1798,6 @@ class FashionApp {
             };
         }
         
-        // Для локальных моделей создаем адаптированные изображения
-        return this.createAdaptedImages(mainImage, category);
-    }
-
-    // Создание адаптированных изображений для локальных моделей
-    createAdaptedImages(mainImage, category) {
-        // В реальном приложении здесь будет логика обработки изображений
-        // Пока используем основное изображение с пометкой для отладки
         return {
             female: mainImage,
             male: mainImage
@@ -1564,6 +1881,28 @@ class FashionApp {
                 this.showMainApp();
             });
             this.tg.MainButton.show();
+        }
+    }
+
+    // Индикатор обработки
+    showProcessingIndicator() {
+        const overlay = document.createElement('div');
+        overlay.className = 'processing-overlay';
+        overlay.innerHTML = `
+            <div class="processing-content">
+                <div class="processing-spinner"></div>
+                <div class="processing-text">Обрабатываем изображение...</div>
+                <div class="processing-subtext">Удаляем фон и оптимизируем для примерочной</div>
+            </div>
+        `;
+        overlay.id = 'processingOverlay';
+        document.body.appendChild(overlay);
+    }
+
+    hideProcessingIndicator() {
+        const overlay = document.getElementById('processingOverlay');
+        if (overlay) {
+            overlay.remove();
         }
     }
 
