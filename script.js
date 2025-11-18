@@ -1551,140 +1551,146 @@ class FashionApp {
     }
 
     // Настройка обработчиков жестов для масштабирования и перемещения
-    setupGestureHandlers(imageElement, category) {
-        if (!imageElement) return;
+// Настройка обработчиков жестов для масштабирования и перемещения
+setupGestureHandlers(imageElement, category) {
+    if (!imageElement) return;
 
-        let startX = 0;
-        let startY = 0;
-        let isDragging = false;
-        let lastTap = 0;
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    let lastTap = 0;
 
-        // Простое перемещение для мыши
-        imageElement.addEventListener('mousedown', (e) => {
-            if (!this.isEditingMode) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            this.selectElementForEditing(category);
-            
-            startX = e.clientX;
-            startY = e.clientY;
-            isDragging = true;
-            
-            const moveHandler = (e) => {
-                if (!isDragging) return;
-                
-                const deltaX = e.clientX - startX;
-                const deltaY = e.clientY - startY;
-                
-                this.clothingTransformations[category].x += deltaX * 0.5;
-                this.clothingTransformations[category].y += deltaY * 0.5;
-                
-                // Ограничения
-                this.clothingTransformations[category].x = Math.max(-100, Math.min(100, this.clothingTransformations[category].x));
-                this.clothingTransformations[category].y = Math.max(-100, Math.min(100, this.clothingTransformations[category].y));
-                
-                this.updateClothingElement(category);
-                this.updateSliders();
-                
-                startX = e.clientX;
-                startY = e.clientY;
-            };
-            
-            const upHandler = () => {
-                isDragging = false;
-                document.removeEventListener('mousemove', moveHandler);
-                document.removeEventListener('mouseup', upHandler);
-            };
-            
-            document.addEventListener('mousemove', moveHandler);
-            document.addEventListener('mouseup', upHandler);
-        });
+    // Клик для выбора элемента
+    imageElement.addEventListener('click', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectElementForEditing(category);
+    });
 
-        // ПРОСТОЙ вариант для тач-устройств
-        imageElement.addEventListener('touchstart', (e) => {
-            if (!this.isEditingMode) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            this.selectElementForEditing(category);
-            
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
-            
-            if (tapLength < 500 && tapLength > 0) {
-                // Двойной тап - переключаем масштаб
-                const currentScale = this.clothingTransformations[category].scale;
-                const newScale = currentScale > 1 ? 0.5 : 2;
-                
-                this.clothingTransformations[category].scale = newScale;
-                this.updateClothingElement(category);
-                this.updateSliders();
-                
-                this.showAlert(`Масштаб: ${Math.round(newScale * 100)}%`);
-                lastTap = 0;
-            } else {
-                // Одиночный тап - начинаем перемещение
-                if (e.touches.length === 1) {
-                    startX = e.touches[0].clientX;
-                    startY = e.touches[0].clientY;
-                    isDragging = true;
-                }
-                lastTap = currentTime;
-            }
-        });
+    // Начало перетаскивания
+    imageElement.addEventListener('mousedown', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectElementForEditing(category);
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = true;
+    });
 
-        imageElement.addEventListener('touchmove', (e) => {
-            if (!this.isEditingMode || !isDragging) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (e.touches.length === 1) {
-                const deltaX = e.touches[0].clientX - startX;
-                const deltaY = e.touches[0].clientY - startY;
-                
-                this.clothingTransformations[category].x += deltaX * 0.5;
-                this.clothingTransformations[category].y += deltaY * 0.5;
-                
-                // Ограничения
-                this.clothingTransformations[category].x = Math.max(-100, Math.min(100, this.clothingTransformations[category].x));
-                this.clothingTransformations[category].y = Math.max(-100, Math.min(100, this.clothingTransformations[category].y));
-                
-                this.updateClothingElement(category);
-                this.updateSliders();
-                
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            }
-        });
+    // Перетаскивание мышью
+    document.addEventListener('mousemove', (e) => {
+        if (!this.isEditingMode || !isDragging || !this.currentlyEditing) return;
+        
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        this.clothingTransformations[this.currentlyEditing].x += deltaX * 0.5;
+        this.clothingTransformations[this.currentlyEditing].y += deltaY * 0.5;
+        
+        // Ограничения
+        this.clothingTransformations[this.currentlyEditing].x = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].x));
+        this.clothingTransformations[this.currentlyEditing].y = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].y));
+        
+        this.updateClothingElement(this.currentlyEditing);
+        this.updateSliders();
+        
+        startX = e.clientX;
+        startY = e.clientY;
+    });
 
-        imageElement.addEventListener('touchend', () => {
-            isDragging = false;
-        });
+    // Конец перетаскивания
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
 
-        // Масштабирование колесиком мыши
-        imageElement.addEventListener('wheel', (e) => {
-            if (!this.isEditingMode) return;
+    // ТАЧ события для мобильных
+    imageElement.addEventListener('touchstart', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectElementForEditing(category);
+        
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        
+        if (tapLength < 300 && tapLength > 0) {
+            // Двойной тап - масштабирование
+            const currentScale = this.clothingTransformations[category].scale;
+            const newScale = currentScale > 1 ? 0.5 : 2;
             
-            e.preventDefault();
-            e.stopPropagation();
-            
-            this.selectElementForEditing(category);
-            
-            const delta = e.deltaY > 0 ? -0.2 : 0.2;
-            const newScale = this.clothingTransformations[category].scale + delta;
-            
-            // Ограничиваем масштаб
-            const clampedScale = Math.max(0.3, Math.min(3, newScale));
-            this.clothingTransformations[category].scale = clampedScale;
-            
+            this.clothingTransformations[category].scale = newScale;
             this.updateClothingElement(category);
             this.updateSliders();
-        });
-    }
+            
+            this.showAlert(`Масштаб: ${Math.round(newScale * 100)}%`);
+            lastTap = 0;
+        } else {
+            // Одиночный тап - начинаем перетаскивание
+            if (e.touches.length === 1) {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isDragging = true;
+            }
+            lastTap = currentTime;
+        }
+    });
+
+    imageElement.addEventListener('touchmove', (e) => {
+        if (!this.isEditingMode || !isDragging || !this.currentlyEditing) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.touches.length === 1) {
+            const deltaX = e.touches[0].clientX - startX;
+            const deltaY = e.touches[0].clientY - startY;
+            
+            this.clothingTransformations[this.currentlyEditing].x += deltaX * 0.5;
+            this.clothingTransformations[this.currentlyEditing].y += deltaY * 0.5;
+            
+            // Ограничения
+            this.clothingTransformations[this.currentlyEditing].x = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].x));
+            this.clothingTransformations[this.currentlyEditing].y = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].y));
+            
+            this.updateClothingElement(this.currentlyEditing);
+            this.updateSliders();
+            
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
+    });
+
+    imageElement.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+
+    // Масштабирование колесиком мыши
+    imageElement.addEventListener('wheel', (e) => {
+        if (!this.isEditingMode || !this.currentlyEditing) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const delta = e.deltaY > 0 ? -0.2 : 0.2;
+        const newScale = this.clothingTransformations[this.currentlyEditing].scale + delta;
+        
+        // Ограничиваем масштаб
+        const clampedScale = Math.max(0.3, Math.min(3, newScale));
+        this.clothingTransformations[this.currentlyEditing].scale = clampedScale;
+        
+        this.updateClothingElement(this.currentlyEditing);
+        this.updateSliders();
+    });
+}
 
     // Админка
     showAdminPanel() {
