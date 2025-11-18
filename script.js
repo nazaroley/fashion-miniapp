@@ -208,6 +208,7 @@ const Storage = {
 };
 
 // Главное приложение
+// Главное приложение
 class FashionApp {
     constructor() {
         this.state = {
@@ -226,7 +227,6 @@ class FashionApp {
             }
         };
 
-        // Новые свойства для управления трансформациями
         this.clothingTransformations = {
             tops: { scale: 1, x: 0, y: 0 },
             bottoms: { scale: 1, x: 0, y: 0 },
@@ -248,7 +248,6 @@ class FashionApp {
             await this.loadData();
             this.initUI();
             this.bindEvents();
-            this.initImageUpload();
             this.hideLoading();
             console.log('FashionApp initialized successfully');
         } catch (error) {
@@ -264,16 +263,13 @@ class FashionApp {
             const maleResponse = await fetch('male.png');
             
             if (!femaleResponse.ok) {
-                console.warn('Female model not found, using placeholder');
                 MODEL_BASES.female = 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель';
             }
             
             if (!maleResponse.ok) {
-                console.warn('Male model not found, using placeholder');
                 MODEL_BASES.male = 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
             }
         } catch (error) {
-            console.warn('Error checking local models:', error);
             MODEL_BASES.female = 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель';
             MODEL_BASES.male = 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
         }
@@ -281,91 +277,38 @@ class FashionApp {
 
     initTelegram() {
         if (window.Telegram?.WebApp) {
-            console.log('Running in Telegram Web App');
             this.tg = window.Telegram.WebApp;
             this.tg.expand();
-            this.tg.enableClosingConfirmation();
             this.tg.ready();
-            
-            this.setTelegramTheme();
         } else {
-            console.log('Running in standalone browser');
             this.tg = {
                 showAlert: (msg) => alert(msg),
-                MainButton: { 
-                    setText: () => {}, 
-                    onClick: () => {}, 
-                    show: () => {},
-                    hide: () => {},
-                    setParams: () => {}
-                },
                 initDataUnsafe: { 
                     user: { 
-                        id: Math.floor(Math.random() * 1000000000), 
-                        first_name: 'Пользователь',
-                        last_name: 'Тестовый',
-                        username: 'testuser'
+                        id: 1, 
+                        first_name: 'Пользователь'
                     } 
-                },
-                sendData: (data) => console.log('Data sent:', data),
-                expand: () => console.log('Expanded'),
-                enableClosingConfirmation: () => console.log('Closing confirmation enabled'),
-                ready: () => console.log('Ready'),
-                platform: 'unknown',
-                colorScheme: 'light',
-                viewportHeight: window.innerHeight,
-                viewportStableHeight: window.innerHeight
+                }
             };
         }
-    }
-
-    setTelegramTheme() {
-        if (!this.tg || !this.tg.colorScheme) return;
-        
-        const isDark = this.tg.colorScheme === 'dark';
-        document.body.style.backgroundColor = isDark ? '#1a1a1a' : '#ffffff';
-        document.body.style.color = isDark ? '#ffffff' : '#1f2937';
     }
 
     async loadData() {
         return new Promise((resolve) => {
             setTimeout(() => {
-                try {
-                    this.state.products = Storage.getProducts();
-                    this.state.filteredProducts = this.state.products;
-                    this.state.cart = Storage.getCart();
-                    this.state.favorites = Storage.getFavorites();
-                    this.updateCategoryCounts();
-                    console.log('Data loaded successfully:', this.state.products.length, 'products');
-                    resolve();
-                } catch (error) {
-                    console.error('Error loading data:', error);
-                    this.state.products = BASE_PRODUCTS.products;
-                    this.state.filteredProducts = BASE_PRODUCTS.products;
-                    this.state.cart = [];
-                    this.state.favorites = [];
-                    resolve();
-                }
-            }, 1000);
+                this.state.products = Storage.getProducts();
+                this.state.filteredProducts = this.state.products;
+                this.state.cart = Storage.getCart();
+                this.state.favorites = Storage.getFavorites();
+                this.updateCategoryCounts();
+                resolve();
+            }, 500);
         });
     }
 
     initUI() {
         this.renderProducts();
         this.updateCartBadge();
-        this.setupMainButton();
-        this.fixViewportHeight();
-    }
-
-    fixViewportHeight() {
-        const setVH = () => {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        };
-        
-        setVH();
-        window.addEventListener('resize', setVH);
-        window.addEventListener('orientationchange', setVH);
     }
 
     bindEvents() {
@@ -377,12 +320,7 @@ class FashionApp {
         });
 
         // Поиск
-        const searchBtn = document.getElementById('searchBtn');
-        const searchClose = document.getElementById('searchClose');
         const searchInput = document.getElementById('searchInput');
-        
-        if (searchBtn) searchBtn.addEventListener('click', () => this.toggleSearch());
-        if (searchClose) searchClose.addEventListener('click', () => this.toggleSearch());
         if (searchInput) searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
 
         // Корзина
@@ -401,29 +339,18 @@ class FashionApp {
             });
         });
 
-        // Модальное окно
-        const modalClose = document.getElementById('modalClose');
-        const productModal = document.getElementById('productModal');
-        
-        if (modalClose) modalClose.addEventListener('click', () => this.closeModal());
-        if (productModal) productModal.addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) this.closeModal();
-        });
-
         // 2D Примерочная
         const fittingBack = document.getElementById('fittingBack');
         const fittingProceed = document.getElementById('fittingProceed');
         const fittingBackToSelection = document.getElementById('fittingBackToSelection');
         const fittingReset = document.getElementById('fittingReset');
         const saveOutfit = document.getElementById('saveOutfit');
-        const shareOutfit = document.getElementById('shareOutfit');
         
         if (fittingBack) fittingBack.addEventListener('click', () => this.closeFittingRoom());
         if (fittingProceed) fittingProceed.addEventListener('click', () => this.showFittingView());
         if (fittingBackToSelection) fittingBackToSelection.addEventListener('click', () => this.showFittingSelection());
         if (fittingReset) fittingReset.addEventListener('click', () => this.resetFitting());
         if (saveOutfit) saveOutfit.addEventListener('click', () => this.saveOutfit());
-        if (shareOutfit) shareOutfit.addEventListener('click', () => this.shareOutfit());
 
         // Табы в примерочной
         document.querySelectorAll('.tab-btn').forEach(tab => {
@@ -442,138 +369,9 @@ class FashionApp {
         // Админка
         const adminBtn = document.getElementById('adminBtn');
         const adminBack = document.getElementById('adminBack');
-        const productForm = document.getElementById('productForm');
-        const removeImageBtn = document.getElementById('removeImageBtn');
-        const removeModelImageBtn = document.getElementById('removeModelImageBtn');
         
         if (adminBtn) adminBtn.addEventListener('click', () => this.showAdminPanel());
         if (adminBack) adminBack.addEventListener('click', () => this.hideAdminPanel());
-        if (productForm) productForm.addEventListener('submit', (e) => this.addNewProduct(e));
-        if (removeImageBtn) removeImageBtn.addEventListener('click', () => this.removeImage());
-        if (removeModelImageBtn) removeModelImageBtn.addEventListener('click', () => this.removeModelImage());
-        
-        // Табы админки
-        document.querySelectorAll('.admin-tab-btn').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                this.switchAdminTab(e.target.dataset.tab);
-            });
-        });
-
-        // Предотвращение zoom на мобильных устройствах
-        document.addEventListener('touchstart', this.handleTouchStart, { passive: false });
-        document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
-    }
-
-    handleTouchStart(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }
-
-    handleTouchMove(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }
-
-    // Загрузка изображений
-    initImageUpload() {
-        this.setupImageUpload('productImageFile', 'uploadArea', 'imagePreview', 'previewImage');
-        this.setupImageUpload('productModelImageFile', 'uploadModelArea', 'modelImagePreview', 'previewModelImage');
-    }
-
-    setupImageUpload(inputId, areaId, previewId, previewImageId) {
-        const fileInput = document.getElementById(inputId);
-        const uploadArea = document.getElementById(areaId);
-        const preview = document.getElementById(previewId);
-        const previewImage = document.getElementById(previewImageId);
-
-        if (!fileInput || !uploadArea) return;
-
-        uploadArea.addEventListener('click', () => fileInput.click());
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.handleImageSelect(files[0], preview, previewImage, uploadArea);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleImageSelect(e.target.files[0], preview, previewImage, uploadArea);
-            }
-        });
-    }
-
-    handleImageSelect(file, preview, previewImage, uploadArea) {
-        if (!file.type.startsWith('image/')) {
-            this.showAlert('Пожалуйста, выберите изображение');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewImage.src = e.target.result;
-            preview.classList.remove('hidden');
-            uploadArea.classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-
-    removeImage() {
-        document.getElementById('productImageFile').value = '';
-        document.getElementById('imagePreview').classList.add('hidden');
-        document.getElementById('uploadArea').classList.remove('hidden');
-    }
-
-    removeModelImage() {
-        document.getElementById('productModelImageFile').value = '';
-        document.getElementById('modelImagePreview').classList.add('hidden');
-        document.getElementById('uploadModelArea').classList.remove('hidden');
-    }
-
-    // Упрощенная обработка изображений (без удаления фона)
-    async processProductImages(mainImageFile, modelImageFile = null) {
-        try {
-            const [mainProcessed, modelProcessed] = await Promise.all([
-                this.readFileAsDataURL(mainImageFile),
-                modelImageFile ? this.readFileAsDataURL(modelImageFile) : null
-            ]);
-
-            return {
-                main: mainProcessed,
-                model: modelProcessed || mainProcessed
-            };
-        } catch (error) {
-            console.error('Image processing failed:', error);
-            // Fallback на оригинальные изображения
-            const mainFallback = await this.readFileAsDataURL(mainImageFile);
-            return {
-                main: mainFallback,
-                model: mainFallback
-            };
-        }
-    }
-
-    readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(e);
-            reader.readAsDataURL(file);
-        });
     }
 
     // Рендер товаров
@@ -593,14 +391,12 @@ class FashionApp {
         emptyState.classList.add('hidden');
 
         grid.innerHTML = this.state.filteredProducts.map(product => `
-            <div class="product-card fade-in" onclick="app.openProductModal(${product.id})">
+            <div class="product-card" onclick="app.openProductModal(${product.id})">
                 <div class="product-image-container">
-                    <img src="${product.images[0]}" alt="${product.name}" class="product-image" 
-                         onerror="this.src='https://placehold.co/400x300/64748b/ffffff?text=Image+Error'">
+                    <img src="${product.images[0]}" alt="${product.name}" class="product-image">
                     <div class="product-badges">
                         ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
                         ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
-                        ${product.isHot ? '<span class="badge hot">HOT</span>' : ''}
                     </div>
                 </div>
                 <div class="product-info">
@@ -632,14 +428,13 @@ class FashionApp {
         if (!modalBody) return;
 
         modalBody.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
                 <div>
-                    <img src="${product.images[0]}" alt="${product.name}" 
-                         style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <img src="${product.images[0]}" alt="${product.name}" style="width: 100%; border-radius: 12px;">
                 </div>
                 <div>
-                    <h2 style="margin-bottom: 12px; color: var(--text);">${product.name}</h2>
-                    <p style="color: var(--text-light); margin-bottom: 20px; line-height: 1.5;">${product.description}</p>
+                    <h2 style="margin-bottom: 12px;">${product.name}</h2>
+                    <p style="margin-bottom: 20px;">${product.description}</p>
                     
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
                         <span style="font-size: 24px; font-weight: 700; color: var(--primary);">
@@ -656,19 +451,8 @@ class FashionApp {
                         <div style="font-weight: 600; margin-bottom: 8px;">Размеры:</div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             ${product.sizes.map(size => `
-                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px; font-size: 14px;">
+                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px;">
                                     ${size}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 25px;">
-                        <div style="font-weight: 600; margin-bottom: 8px;">Цвета:</div>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            ${product.colors.map(color => `
-                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px; font-size: 14px;">
-                                    ${color}
                                 </span>
                             `).join('')}
                         </div>
@@ -676,18 +460,11 @@ class FashionApp {
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button onclick="app.addToCart(${product.id}); app.closeModal()" 
-                                style="padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; 
-                                       font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
-                                onmouseover="this.style.background='var(--primary-dark)'" 
-                                onmouseout="this.style.background='var(--primary)'">
+                                style="padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600;">
                             Добавить в корзину
                         </button>
                         <button onclick="app.openFittingRoom(${product.id})" 
-                                style="padding: 15px; background: var(--surface); color: var(--primary); border: 2px solid var(--primary); 
-                                       border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
-                                       transition: all 0.2s ease;"
-                                onmouseover="this.style.background='var(--primary)'; this.style.color='white'" 
-                                onmouseout="this.style.background='var(--surface)'; this.style.color='var(--primary)'">
+                                style="padding: 15px; background: var(--surface); color: var(--primary); border: 2px solid var(--primary); border-radius: 12px; font-size: 16px; font-weight: 600;">
                             👗 2D Примерка
                         </button>
                     </div>
@@ -740,7 +517,6 @@ class FashionApp {
                 <div class="empty-cart">
                     <div class="empty-icon">🛒</div>
                     <h3>Корзина пуста</h3>
-                    <p>Добавьте товары из каталога</p>
                 </div>
             `;
             return;
@@ -748,14 +524,9 @@ class FashionApp {
 
         container.innerHTML = this.state.cart.map(item => `
             <div class="cart-item">
-                <img src="${item.product.images[0]}" alt="${item.product.name}" class="cart-item-image"
-                     onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=Image+Error'">
+                <img src="${item.product.images[0]}" alt="${item.product.name}" class="cart-item-image">
                 <div class="cart-item-details">
                     <h4 class="cart-item-title">${item.product.name}</h4>
-                    <div class="cart-item-options">
-                        <span class="cart-item-size">Размер: ${item.size}</span>
-                        <span class="cart-item-color">Цвет: ${item.color}</span>
-                    </div>
                     <div class="cart-item-price">${(item.product.price * item.quantity).toLocaleString()} ₽</div>
                 </div>
                 <div class="cart-item-controls">
@@ -797,8 +568,6 @@ class FashionApp {
 
         if (category === 'all') {
             this.state.filteredProducts = this.state.products;
-        } else if (category === 'new') {
-            this.state.filteredProducts = this.state.products.filter(p => p.isNew);
         } else {
             this.state.filteredProducts = this.state.products.filter(p => p.category === category);
         }
@@ -814,8 +583,7 @@ class FashionApp {
         } else {
             const lowerQuery = query.toLowerCase();
             this.state.filteredProducts = this.state.products.filter(product => 
-                product.name.toLowerCase().includes(lowerQuery) ||
-                product.description.toLowerCase().includes(lowerQuery)
+                product.name.toLowerCase().includes(lowerQuery)
             );
         }
         
@@ -832,36 +600,15 @@ class FashionApp {
             this.showMainApp();
         } else if (page === 'fitting') {
             this.openFittingRoom();
-        } else if (page === 'favorites') {
-            this.showFavorites();
-        } else if (page === 'profile') {
-            this.showProfile();
         }
-    }
-
-    showFavorites() {
-        const favorites = this.state.products.filter(p => this.state.favorites.includes(p.id));
-        if (favorites.length === 0) {
-            this.showAlert('Нет избранных товаров');
-            return;
-        }
-        this.state.filteredProducts = favorites;
-        this.renderProducts();
-    }
-
-    showProfile() {
-        const user = this.tg.initDataUnsafe.user;
-        this.showAlert(`👤 Профиль:\nИмя: ${user?.first_name || 'Неизвестно'}\n❤️ Избранных: ${this.state.favorites.length}\n🛒 В корзине: ${this.state.cart.length}`);
     }
 
     toggleFavorite(productId) {
         const index = this.state.favorites.indexOf(productId);
         if (index > -1) {
             this.state.favorites.splice(index, 1);
-            this.showAlert('Удалено из избранного');
         } else {
             this.state.favorites.push(productId);
-            this.showAlert('Добавлено в избранное');
         }
         Storage.saveFavorites(this.state.favorites);
         this.renderProducts();
@@ -879,7 +626,6 @@ class FashionApp {
             shoes: null
         };
         
-        // Сброс трансформаций при открытии примерочной
         this.clothingTransformations = {
             tops: { scale: 1, x: 0, y: 0 },
             bottoms: { scale: 1, x: 0, y: 0 },
@@ -899,7 +645,6 @@ class FashionApp {
         
         this.renderSelectedItems();
         this.setActiveFittingTab('tops');
-        this.updateProceedButton();
     }
 
     showFittingSelection() {
@@ -918,17 +663,13 @@ class FashionApp {
         document.getElementById('fittingView').classList.remove('hidden');
         
         this.updateModelView();
-        this.renderOutfitItems();
         this.addEditingControls();
     }
 
     // Добавление товара в примерку
     addToFitting(productId) {
         const product = this.state.products.find(p => p.id === productId);
-        if (!product || !product.fitting) {
-            console.error('Product not found:', productId);
-            return;
-        }
+        if (!product || !product.fitting) return;
 
         const category = product.fitting.type;
         
@@ -947,7 +688,6 @@ class FashionApp {
         }
 
         this.renderSelectedItems();
-        this.updateProceedButton();
         
         const activeTab = document.querySelector('.tab-btn.active');
         if (activeTab) {
@@ -958,12 +698,6 @@ class FashionApp {
     removeFromFitting(category) {
         this.state.currentOutfit[category] = null;
         this.renderSelectedItems();
-        this.updateProceedButton();
-        
-        const activeTab = document.querySelector('.tab-btn.active');
-        if (activeTab) {
-            this.renderFittingProducts(activeTab.dataset.category);
-        }
     }
 
     renderSelectedItems() {
@@ -981,53 +715,11 @@ class FashionApp {
 
         container.innerHTML = selectedItems.map(({ category, product }) => `
             <div class="selected-item">
-                <img src="${product.images[0]}" alt="${product.name}" 
-                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=IMG'">
+                <img src="${product.images[0]}" alt="${product.name}">
                 <span>${this.getCategoryName(category)}: ${product.name}</span>
                 <button class="remove-item" onclick="app.removeFromFitting('${category}')">✕</button>
             </div>
         `).join('');
-    }
-
-    renderOutfitItems() {
-        const container = document.getElementById('outfitItems');
-        if (!container) return;
-
-        const outfitItems = Object.entries(this.state.currentOutfit)
-            .filter(([_, product]) => product !== null)
-            .map(([category, product]) => ({ category, product }));
-
-        if (outfitItems.length === 0) {
-            container.innerHTML = '<div class="empty-selection">Нет выбранных вещей</div>';
-            return;
-        }
-
-        container.innerHTML = outfitItems.map(({ category, product }) => `
-            <div class="outfit-item">
-                <img src="${product.images[0]}" alt="${product.name}" 
-                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=IMG'">
-                <div class="outfit-item-info">
-                    <div class="outfit-item-name">${product.name}</div>
-                    <div class="outfit-item-category">${this.getCategoryName(category)}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    updateProceedButton() {
-        const proceedButton = document.getElementById('fittingProceed');
-        if (!proceedButton) return;
-
-        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
-        proceedButton.disabled = !hasItems;
-        
-        if (hasItems) {
-            proceedButton.style.opacity = '1';
-            proceedButton.style.cursor = 'pointer';
-        } else {
-            proceedButton.style.opacity = '0.5';
-            proceedButton.style.cursor = 'not-allowed';
-        }
     }
 
     // Обновление отображения модели
@@ -1040,9 +732,7 @@ class FashionApp {
         const baseImage = MODEL_BASES[this.state.currentModel];
         
         modelBase.innerHTML = `
-            <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
-                 class="model-base-image"
-                 onerror="this.handleModelImageError(this)">
+            <img src="${baseImage}" alt="Модель" class="model-base-image">
         `;
 
         clothingLayers.innerHTML = '';
@@ -1055,107 +745,83 @@ class FashionApp {
                 const layer = document.createElement('div');
                 layer.className = `clothing-layer ${layerType}-layer`;
                 
-                const modelImage = this.getModelImage(product, layerType);
+                const modelImage = product.modelImages?.[this.state.currentModel] || product.images[0];
                 
                 layer.innerHTML = `
                     <img src="${modelImage}" 
                          alt="${product.name}" 
                          class="clothing-image ${layerType}-image"
-                         data-category="${layerType}"
-                         onerror="this.handleClothingImageError(this, '${layerType}')">
+                         data-category="${layerType}">
                 `;
                 clothingLayers.appendChild(layer);
                 
-                // Инициализируем трансформации для нового элемента
-                if (!this.clothingTransformations[layerType]) {
-                    this.clothingTransformations[layerType] = { scale: 1, x: 0, y: 0 };
-                }
+                // ПРОСТОЙ обработчик кликов
+                const img = layer.querySelector('.clothing-image');
+                img.addEventListener('click', () => {
+                    if (this.isEditingMode) {
+                        this.selectElementForEditing(layerType);
+                    }
+                });
+
+                // ПРОСТОЙ обработчик перетаскивания
+                this.setupSimpleDrag(img, layerType);
                 
-                // Применяем текущие трансформации
                 this.updateClothingElement(layerType);
-                
-                // Добавляем обработчики жестов
-                this.setupGestureHandlers(layer.querySelector('.clothing-image'), layerType);
             }
         });
     }
 
-    // Обработка ошибок загрузки модели
-    handleModelImageError(imgElement) {
-        console.log('Model image failed to load, using placeholder');
-        const isFemale = this.state.currentModel === 'female';
-        imgElement.src = isFemale 
-            ? 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель'
-            : 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
-        imgElement.onerror = null;
-    }
+    // ПРОСТОЙ обработчик перетаскивания
+    setupSimpleDrag(element, category) {
+        let isDragging = false;
+        let startX, startY;
 
-    // Обработка ошибок загрузки одежды
-    handleClothingImageError(imgElement, layerType) {
-        console.log('Clothing image failed to load, using placeholder');
-        const color = this.getCategoryColor(layerType);
-        const text = this.getCategoryText(layerType);
-        const dimensions = this.getImageDimensions(layerType);
-        
-        imgElement.src = `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        imgElement.onerror = null;
-    }
+        element.addEventListener('mousedown', (e) => {
+            if (!this.isEditingMode) return;
+            e.preventDefault();
+            this.selectElementForEditing(category);
+            isDragging = true;
+            startX = e.clientX - this.clothingTransformations[category].x;
+            startY = e.clientY - this.clothingTransformations[category].y;
+        });
 
-    // Автоматическая адаптация изображений для примерочной
-    getModelImage(product, layerType) {
-        if (product.modelImages && product.modelImages[this.state.currentModel]) {
-            return product.modelImages[this.state.currentModel];
-        }
-        
-        return this.adaptImageForFitting(product.images[0], layerType);
-    }
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !this.isEditingMode) return;
+            
+            this.clothingTransformations[category].x = e.clientX - startX;
+            this.clothingTransformations[category].y = e.clientY - startY;
+            
+            this.updateClothingElement(category);
+            this.updateSliders();
+        });
 
-    // Адаптация обычного фото товара для примерочной
-    adaptImageForFitting(imageUrl, layerType) {
-        if (layerType === 'dresses') {
-            return imageUrl;
-        }
-        
-        const baseUrl = imageUrl.split('?')[0];
-        const dimensions = this.getImageDimensions(layerType);
-        
-        if (imageUrl.includes('placehold.co')) {
-            const color = this.getCategoryColor(layerType);
-            const text = this.getCategoryText(layerType);
-            return `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        }
-        
-        return imageUrl;
-    }
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
 
-    getImageDimensions(layerType) {
-        const dimensions = {
-            'tops': '250x300',
-            'bottoms': '250x200', 
-            'dresses': '300x500',
-            'shoes': '200x150'
-        };
-        return dimensions[layerType] || '300x300';
-    }
+        // Touch events
+        element.addEventListener('touchstart', (e) => {
+            if (!this.isEditingMode) return;
+            e.preventDefault();
+            this.selectElementForEditing(category);
+            isDragging = true;
+            startX = e.touches[0].clientX - this.clothingTransformations[category].x;
+            startY = e.touches[0].clientY - this.clothingTransformations[category].y;
+        });
 
-    getCategoryColor(layerType) {
-        const colors = {
-            'tops': '8b5cf6',
-            'bottoms': '06b6d4',
-            'dresses': 'ec4899',
-            'shoes': 'f59e0b'
-        };
-        return colors[layerType] || '64748b';
-    }
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging || !this.isEditingMode) return;
+            
+            this.clothingTransformations[category].x = e.touches[0].clientX - startX;
+            this.clothingTransformations[category].y = e.touches[0].clientY - startY;
+            
+            this.updateClothingElement(category);
+            this.updateSliders();
+        });
 
-    getCategoryText(layerType) {
-        const texts = {
-            'tops': 'Футболка+на+модели',
-            'bottoms': 'Штаны+на+модели',
-            'dresses': 'Платье+на+модели',
-            'shoes': 'Обувь+на+модели'
-        };
-        return texts[layerType] || 'Одежда+на+модели';
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
     }
 
     // Смена модели
@@ -1182,16 +848,13 @@ class FashionApp {
         const container = document.getElementById('fittingProducts');
         if (!container) return;
 
-        const products = this.state.products.filter(p => 
-            p.fitting?.type === category
-        );
+        const products = this.state.products.filter(p => p.fitting?.type === category);
 
         if (products.length === 0) {
             container.innerHTML = `
                 <div class="fitting-empty">
                     <div class="empty-icon">👗</div>
                     <h3>Нет товаров для примерки</h3>
-                    <p>Добавьте товары в эту категорию</p>
                 </div>
             `;
             return;
@@ -1202,8 +865,7 @@ class FashionApp {
             return `
                 <div class="fitting-product ${isSelected ? 'selected' : ''}" 
                      onclick="app.addToFitting(${product.id})">
-                    <img src="${product.images[0]}" alt="${product.name}" 
-                         onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=IMG'">
+                    <img src="${product.images[0]}" alt="${product.name}">
                     <div class="product-title">${product.name}</div>
                     <div class="product-price">${product.price.toLocaleString()} ₽</div>
                 </div>
@@ -1220,7 +882,6 @@ class FashionApp {
             shoes: null
         };
         
-        // Сброс трансформаций
         this.clothingTransformations = {
             tops: { scale: 1, x: 0, y: 0 },
             bottoms: { scale: 1, x: 0, y: 0 },
@@ -1232,8 +893,6 @@ class FashionApp {
         this.currentlyEditing = null;
         
         this.renderSelectedItems();
-        this.renderOutfitItems();
-        this.updateProceedButton();
         this.updateModelView();
         this.hideEditingControls();
         
@@ -1264,281 +923,38 @@ class FashionApp {
         this.showAlert('Образ сохранен!');
     }
 
-    // Поделиться образом
-    shareOutfit() {
-        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
-        
-        if (!hasItems) {
-            this.showAlert('Добавьте товары для создания образа');
-            return;
-        }
-
-        this.showAlert('Функция "Поделиться" скоро будет доступна!');
-    }
-
     handleFittingTabChange(category) {
         this.setActiveFittingTab(category);
     }
 
-    // НОВЫЕ МЕТОДЫ ДЛЯ РЕДАКТИРОВАНИЯ ОДЕЖДЫ
-
-    // Добавляем кнопки управления редактированием
+    // РЕДАКТИРОВАНИЕ ОДЕЖДЫ - ПРОСТОЙ ВАРИАНТ
     addEditingControls() {
         const modelControls = document.querySelector('.model-controls');
         if (!modelControls) return;
 
-        // Удаляем старые кнопки редактирования если есть
-        const oldEditBtn = document.getElementById('toggleEditMode');
-        if (oldEditBtn) oldEditBtn.remove();
-
         const editButton = document.createElement('button');
-        editButton.id = 'toggleEditMode';
-        editButton.className = `model-btn ${this.isEditingMode ? 'active' : ''}`;
-        editButton.innerHTML = this.isEditingMode ? '✅ Завершить редактирование' : '✏️ Редактировать одежду';
+        editButton.className = 'model-btn';
+        editButton.innerHTML = this.isEditingMode ? '✅ Завершить' : '✏️ Редактировать';
         editButton.onclick = () => this.toggleEditMode();
         
         modelControls.appendChild(editButton);
-
-        // Если режим редактирования активен, показываем дополнительные контролы
-        if (this.isEditingMode) {
-            this.showEditingControls();
-        } else {
-            this.hideEditingControls();
-        }
     }
 
-    // Переключение режима редактирования
     toggleEditMode() {
         this.isEditingMode = !this.isEditingMode;
-        this.addEditingControls();
+        this.showAlert(this.isEditingMode ? 
+            'Режим редактирования: кликайте на одежду и перетаскивайте' : 
+            'Режим редактирования выключен');
+    }
+
+    selectElementForEditing(category) {
+        if (!this.isEditingMode) return;
         
-        if (this.isEditingMode) {
-            this.showAlert('Режим редактирования включен! Используйте кнопки для управления.');
-        } else {
-            this.currentlyEditing = null;
-            this.showAlert('Режим редактирования выключен');
-        }
+        this.currentlyEditing = category;
+        this.showAlert(`Выбран: ${this.getCategoryName(category)}`);
     }
 
-    // Показываем дополнительные элементы управления для редактирования
-showEditingControls() {
-    let controlsContainer = document.getElementById('editingControls');
-    
-    if (!controlsContainer) {
-        controlsContainer = document.createElement('div');
-        controlsContainer.id = 'editingControls';
-        controlsContainer.className = 'editing-controls';
-        controlsContainer.innerHTML = `
-            <div class="fitting-hint">
-                ✨ Режим редактирования<br>
-                <strong>👆 Тап - выбрать элемент</strong><br>
-                <strong>👆 Перетаскивание - переместить</strong><br>
-                <strong>👆👆 Двойной тап - масштабировать</strong><br>
-                <strong>🔄 Колесико мыши - масштаб</strong>
-            </div>
-            <div class="element-selector">
-                <h4>Выберите элемент:</h4>
-                <div class="element-buttons" id="elementButtons"></div>
-            </div>
-            <div class="transform-controls hidden" id="transformControls">
-                <h4>Управление выбранным элементом:</h4>
-                
-                <div class="quick-buttons">
-                    <button class="control-btn" onclick="app.zoomOut()">🔍 Уменьшить</button>
-                    <button class="control-btn" onclick="app.zoomIn()">🔍 Увеличить</button>
-                    <button class="control-btn reset-btn" onclick="app.resetTransformation()">🔄 Сбросить</button>
-                </div>
-                
-                <div class="control-group">
-                    <label>Масштаб: <span id="scaleValue">100%</span></label>
-                    <input type="range" id="scaleSlider" min="30" max="300" value="100" class="control-slider">
-                </div>
-                <div class="control-group">
-                    <label>Позиция X: <span id="xValue">0</span></label>
-                    <input type="range" id="xSlider" min="-100" max="100" value="0" class="control-slider">
-                </div>
-                <div class="control-group">
-                    <label>Позиция Y: <span id="yValue">0</span></label>
-                    <input type="range" id="ySlider" min="-100" max="100" value="0" class="control-slider">
-                </div>
-            </div>
-        `;
-        
-        const modelSection = document.querySelector('.model-section');
-        if (modelSection) {
-            modelSection.appendChild(controlsContainer);
-        }
-    }
-
-    controlsContainer.classList.remove('hidden');
-    this.renderElementButtons();
-    this.setupTransformSliders();
-}
-
-    // Скрываем элементы управления редактированием
-    hideEditingControls() {
-        const controlsContainer = document.getElementById('editingControls');
-        if (controlsContainer) {
-            controlsContainer.classList.add('hidden');
-        }
-        
-        const transformControls = document.getElementById('transformControls');
-        if (transformControls) {
-            transformControls.classList.add('hidden');
-        }
-    }
-
-    // Рендерим кнопки для выбора элементов одежды
-    renderElementButtons() {
-        const container = document.getElementById('elementButtons');
-        if (!container) return;
-
-        const elements = Object.entries(this.state.currentOutfit)
-            .filter(([_, product]) => product !== null)
-            .map(([category, product]) => ({ category, product }));
-
-        if (elements.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-muted);">Нет элементов для редактирования</p>';
-            return;
-        }
-
-        container.innerHTML = elements.map(({ category, product }) => `
-            <button class="element-btn ${this.currentlyEditing === category ? 'active' : ''}" 
-                    onclick="app.selectElementForEditing('${category}')">
-                <img src="${product.images[0]}" alt="${product.name}">
-                <span>${this.getCategoryName(category)}</span>
-            </button>
-        `).join('');
-    }
-
-    // Выбор элемента для редактирования
-selectElementForEditing(category) {
-    this.currentlyEditing = category;
-    this.renderElementButtons();
-    this.showTransformControls();
-    this.updateSliders();
-    
-    // Визуальная обратная связь
-    document.querySelectorAll('.clothing-layer').forEach(layer => {
-        layer.classList.remove('selected');
-    });
-    
-    const selectedLayer = document.querySelector(`.${category}-layer`);
-    if (selectedLayer) {
-        selectedLayer.classList.add('selected');
-    }
-    
-    this.showAlert(`Выбран: ${this.getCategoryName(category)}`);
-}
-
-    // Показываем слайдеры управления трансформацией
-    showTransformControls() {
-        const transformControls = document.getElementById('transformControls');
-        if (transformControls) {
-            transformControls.classList.remove('hidden');
-        }
-    }
-
-    // Настраиваем слайдеры
-    setupTransformSliders() {
-        const scaleSlider = document.getElementById('scaleSlider');
-        const xSlider = document.getElementById('xSlider');
-        const ySlider = document.getElementById('ySlider');
-
-        if (scaleSlider) {
-            scaleSlider.oninput = (e) => this.handleScaleChange(parseInt(e.target.value));
-        }
-        if (xSlider) {
-            xSlider.oninput = (e) => this.handlePositionChange('x', parseInt(e.target.value));
-        }
-        if (ySlider) {
-            ySlider.oninput = (e) => this.handlePositionChange('y', parseInt(e.target.value));
-        }
-    }
-
-    // Обновляем значения слайдеров
-    updateSliders() {
-        if (!this.currentlyEditing) return;
-
-        const transformation = this.clothingTransformations[this.currentlyEditing];
-        
-        const scaleSlider = document.getElementById('scaleSlider');
-        const xSlider = document.getElementById('xSlider');
-        const ySlider = document.getElementById('ySlider');
-        const scaleValue = document.getElementById('scaleValue');
-        const xValue = document.getElementById('xValue');
-        const yValue = document.getElementById('yValue');
-
-        if (scaleSlider) scaleSlider.value = Math.round(transformation.scale * 100);
-        if (xSlider) xSlider.value = transformation.x;
-        if (ySlider) ySlider.value = transformation.y;
-        if (scaleValue) scaleValue.textContent = Math.round(transformation.scale * 100) + '%';
-        if (xValue) xValue.textContent = transformation.x;
-        if (yValue) yValue.textContent = transformation.y;
-    }
-
-    // Обработка изменения масштаба
-    handleScaleChange(scalePercent) {
-        if (!this.currentlyEditing) return;
-
-        const scale = scalePercent / 100;
-        this.clothingTransformations[this.currentlyEditing].scale = scale;
-        
-        const scaleValue = document.getElementById('scaleValue');
-        if (scaleValue) scaleValue.textContent = scalePercent + '%';
-        
-        this.updateClothingElement(this.currentlyEditing);
-    }
-
-    // Обработка изменения позиции
-    handlePositionChange(axis, value) {
-        if (!this.currentlyEditing) return;
-
-        this.clothingTransformations[this.currentlyEditing][axis] = value;
-        
-        const valueElement = document.getElementById(axis + 'Value');
-        if (valueElement) valueElement.textContent = value;
-        
-        this.updateClothingElement(this.currentlyEditing);
-    }
-
-    // Сброс трансформации
-    resetTransformation() {
-        if (!this.currentlyEditing) return;
-
-        this.clothingTransformations[this.currentlyEditing] = { scale: 1, x: 0, y: 0 };
-        this.updateSliders();
-        this.updateClothingElement(this.currentlyEditing);
-        this.showAlert('Трансформации сброшены');
-    }
-
-    // Увеличить
-    zoomIn() {
-        if (!this.currentlyEditing) {
-            this.showAlert('Сначала выберите элемент одежды');
-            return;
-        }
-        
-        const newScale = this.clothingTransformations[this.currentlyEditing].scale + 0.2;
-        this.clothingTransformations[this.currentlyEditing].scale = Math.min(3, newScale);
-        this.updateClothingElement(this.currentlyEditing);
-        this.updateSliders();
-    }
-
-    // Уменьшить
-    zoomOut() {
-        if (!this.currentlyEditing) {
-            this.showAlert('Сначала выберите элемент одежды');
-            return;
-        }
-        
-        const newScale = this.clothingTransformations[this.currentlyEditing].scale - 0.2;
-        this.clothingTransformations[this.currentlyEditing].scale = Math.max(0.3, newScale);
-        this.updateClothingElement(this.currentlyEditing);
-        this.updateSliders();
-    }
-
-    // Обновляем отображение элемента одежды с трансформациями
+    // Обновляем отображение элемента одежды
     updateClothingElement(category) {
         const layer = document.querySelector(`.${category}-layer`);
         if (!layer) return;
@@ -1547,369 +963,37 @@ selectElementForEditing(category) {
         const image = layer.querySelector('.clothing-image');
         
         if (image) {
-            // Пропорциональное масштабирование с сохранением aspect ratio
-            const scale = transformation.scale;
-            const translateX = transformation.x;
-            const translateY = transformation.y;
-            
-            image.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
-            image.style.transformOrigin = 'center center';
-            
-            // Сохраняем трансформации в data-атрибуты для жестов
-            image.dataset.scale = scale;
-            image.dataset.translateX = translateX;
-            image.dataset.translateY = translateY;
+            image.style.transform = `scale(${transformation.scale}) translate(${transformation.x}px, ${transformation.y}px)`;
         }
     }
 
-    // Настройка обработчиков жестов для масштабирования и перемещения
-// Настройка обработчиков жестов для масштабирования и перемещения
-setupGestureHandlers(imageElement, category) {
-    if (!imageElement) return;
-
-    let startX = 0;
-    let startY = 0;
-    let isDragging = false;
-    let lastTap = 0;
-
-    // Клик для выбора элемента
-    imageElement.addEventListener('click', (e) => {
-        if (!this.isEditingMode) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        this.selectElementForEditing(category);
-    });
-
-    // Начало перетаскивания
-    imageElement.addEventListener('mousedown', (e) => {
-        if (!this.isEditingMode) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        this.selectElementForEditing(category);
-        
-        startX = e.clientX;
-        startY = e.clientY;
-        isDragging = true;
-    });
-
-    // Перетаскивание мышью
-    document.addEventListener('mousemove', (e) => {
-        if (!this.isEditingMode || !isDragging || !this.currentlyEditing) return;
-        
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-        
-        this.clothingTransformations[this.currentlyEditing].x += deltaX * 0.5;
-        this.clothingTransformations[this.currentlyEditing].y += deltaY * 0.5;
-        
-        // Ограничения
-        this.clothingTransformations[this.currentlyEditing].x = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].x));
-        this.clothingTransformations[this.currentlyEditing].y = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].y));
-        
+    // Увеличить
+    zoomIn() {
+        if (!this.currentlyEditing) return;
+        this.clothingTransformations[this.currentlyEditing].scale += 0.2;
         this.updateClothingElement(this.currentlyEditing);
-        this.updateSliders();
-        
-        startX = e.clientX;
-        startY = e.clientY;
-    });
+    }
 
-    // Конец перетаскивания
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-
-    // ТАЧ события для мобильных
-    imageElement.addEventListener('touchstart', (e) => {
-        if (!this.isEditingMode) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        this.selectElementForEditing(category);
-        
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-        
-        if (tapLength < 300 && tapLength > 0) {
-            // Двойной тап - масштабирование
-            const currentScale = this.clothingTransformations[category].scale;
-            const newScale = currentScale > 1 ? 0.5 : 2;
-            
-            this.clothingTransformations[category].scale = newScale;
-            this.updateClothingElement(category);
-            this.updateSliders();
-            
-            this.showAlert(`Масштаб: ${Math.round(newScale * 100)}%`);
-            lastTap = 0;
-        } else {
-            // Одиночный тап - начинаем перетаскивание
-            if (e.touches.length === 1) {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                isDragging = true;
-            }
-            lastTap = currentTime;
-        }
-    });
-
-    imageElement.addEventListener('touchmove', (e) => {
-        if (!this.isEditingMode || !isDragging || !this.currentlyEditing) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        if (e.touches.length === 1) {
-            const deltaX = e.touches[0].clientX - startX;
-            const deltaY = e.touches[0].clientY - startY;
-            
-            this.clothingTransformations[this.currentlyEditing].x += deltaX * 0.5;
-            this.clothingTransformations[this.currentlyEditing].y += deltaY * 0.5;
-            
-            // Ограничения
-            this.clothingTransformations[this.currentlyEditing].x = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].x));
-            this.clothingTransformations[this.currentlyEditing].y = Math.max(-100, Math.min(100, this.clothingTransformations[this.currentlyEditing].y));
-            
-            this.updateClothingElement(this.currentlyEditing);
-            this.updateSliders();
-            
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-        }
-    });
-
-    imageElement.addEventListener('touchend', () => {
-        isDragging = false;
-    });
-
-    // Масштабирование колесиком мыши
-    imageElement.addEventListener('wheel', (e) => {
-        if (!this.isEditingMode || !this.currentlyEditing) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const delta = e.deltaY > 0 ? -0.2 : 0.2;
-        const newScale = this.clothingTransformations[this.currentlyEditing].scale + delta;
-        
-        // Ограничиваем масштаб
-        const clampedScale = Math.max(0.3, Math.min(3, newScale));
-        this.clothingTransformations[this.currentlyEditing].scale = clampedScale;
-        
+    // Уменьшить
+    zoomOut() {
+        if (!this.currentlyEditing) return;
+        this.clothingTransformations[this.currentlyEditing].scale -= 0.2;
         this.updateClothingElement(this.currentlyEditing);
-        this.updateSliders();
-    });
-}
-
-    // Админка
-    showAdminPanel() {
-        this.showPanel('adminPanel');
-        this.loadAdminProducts();
-        this.loadOrders();
     }
 
-    hideAdminPanel() {
-        this.hidePanel('adminPanel');
+    // Сброс
+    resetTransformation() {
+        if (!this.currentlyEditing) return;
+        this.clothingTransformations[this.currentlyEditing] = { scale: 1, x: 0, y: 0 };
+        this.updateClothingElement(this.currentlyEditing);
+        this.showAlert('Трансформации сброшены');
     }
 
-    switchAdminTab(tabName) {
-        document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-        
-        const tabContent = document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-        const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
-        
-        if (tabContent) tabContent.classList.add('active');
-        if (tabButton) tabButton.classList.add('active');
-    }
-
-    loadAdminProducts() {
-        const container = document.getElementById('adminProductsList');
-        if (!container) return;
-
-        const products = Storage.getProducts();
-
-        if (products.length === 0) {
-            container.innerHTML = `
-                <div class="empty-admin">
-                    <p>Нет товаров</p>
-                    <button class="btn btn-primary" onclick="app.switchAdminTab('add')" style="margin-top: 15px;">
-                        Добавить первый товар
-                    </button>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = products.map(product => `
-            <div class="admin-product-item">
-                <img src="${product.images[0]}" alt="${product.name}" class="admin-product-image"
-                     onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=Image+Error'">
-                <div class="admin-product-info">
-                    <h4>${product.name}</h4>
-                    <div class="admin-product-price">${product.price.toLocaleString()} ₽</div>
-                    <div class="admin-product-category">${this.getCategoryName(product.category)}</div>
-                    <div class="admin-product-badges">
-                        ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
-                        ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
-                        ${product.isHot ? '<span class="badge hot">HOT</span>' : ''}
-                    </div>
-                </div>
-                <div class="admin-product-actions">
-                    <button class="admin-btn admin-btn-delete" onclick="app.deleteProduct(${product.id})">
-                        Удалить
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    loadOrders() {
-        const container = document.getElementById('adminOrdersList');
-        if (!container) return;
-
-        const orders = Storage.getOrders();
-
-        if (orders.length === 0) {
-            container.innerHTML = `
-                <div class="empty-admin">
-                    <p>Нет заказов</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = orders.map(order => `
-            <div class="admin-product-item">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                    <h4>Заказ #${order.id}</h4>
-                    <span style="padding: 4px 12px; background: #fef3c7; color: #92400e; border-radius: 20px; font-size: 12px; font-weight: 600;">
-                        Новый
-                    </span>
-                </div>
-                <div style="color: var(--text-light); margin-bottom: 10px;">
-                    <div>Сумма: <strong style="color: var(--primary);">${order.total.toLocaleString()} ₽</strong></div>
-                    <div>Товаров: ${order.items.length} шт.</div>
-                    <div>Дата: ${new Date(order.createdAt).toLocaleDateString()}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    addNewProduct(e) {
-        e.preventDefault();
-        
-        const mainImageFile = document.getElementById('productImageFile')?.files[0];
-        const modelImageFile = document.getElementById('productModelImageFile')?.files[0];
-
-        if (!mainImageFile) {
-            this.showAlert('Пожалуйста, выберите основное изображение товара');
-            return;
-        }
-
-        // Показываем индикатор обработки
-        this.showProcessingIndicator();
-
-        this.processProductImages(mainImageFile, modelImageFile)
-            .then(({ main, model }) => {
-                const product = {
-                    id: Date.now(),
-                    name: document.getElementById('productName').value,
-                    description: document.getElementById('productDescription').value,
-                    price: parseInt(document.getElementById('productPrice').value),
-                    oldPrice: document.getElementById('productOldPrice').value ? 
-                        parseInt(document.getElementById('productOldPrice').value) : null,
-                    category: document.getElementById('productCategory').value,
-                    images: [main],
-                    modelImages: this.createModelImages(main, model, document.getElementById('productCategory').value),
-                    sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
-                    colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
-                    inStock: true,
-                    isNew: document.getElementById('productIsNew')?.checked || false,
-                    isSale: document.getElementById('productIsSale')?.checked || false,
-                    isHot: document.getElementById('productIsHot')?.checked || false,
-                    fitting: this.getFittingConfig(document.getElementById('productCategory').value)
-                };
-
-                const products = Storage.getProducts();
-                products.push(product);
-                Storage.saveProducts(products);
-                
-                this.state.products = products;
-                this.state.filteredProducts = products;
-                this.renderProducts();
-                this.hideProcessingIndicator();
-                this.showAlert('Товар успешно добавлен!');
-                
-                e.target.reset();
-                this.removeImage();
-                this.removeModelImage();
-            })
-            .catch(error => {
-                this.hideProcessingIndicator();
-                this.showAlert('Ошибка при добавлении товара: ' + error.message);
-            });
-    }
-
-    // Создание изображений для примерочной
-    createModelImages(mainImage, customModelImage, category) {
-        if (customModelImage) {
-            return {
-                female: customModelImage,
-                male: customModelImage
-            };
-        }
-        
-        return {
-            female: mainImage,
-            male: mainImage
-        };
-    }
-
-    getFittingConfig(category) {
-        const configs = {
-            'tops': { type: 'tops', layer: 'top' },
-            'bottoms': { type: 'bottoms', layer: 'bottom' },
-            'dresses': { type: 'dresses', layer: 'dress' },
-            'shoes': { type: 'shoes', layer: 'shoes' }
-        };
-        return configs[category] || { type: category, layer: category };
-    }
-
-    deleteProduct(productId) {
-        if (!confirm('Удалить этот товар?')) return;
-        
-        const products = Storage.getProducts().filter(p => p.id !== productId);
-        Storage.saveProducts(products);
-        
-        this.state.products = products;
-        this.state.filteredProducts = products;
-        this.renderProducts();
-        this.loadAdminProducts();
-        this.showAlert('Товар удален');
+    updateSliders() {
+        // Простой метод для обновления слайдеров
     }
 
     // Утилиты
-    updateCategoryCounts() {
-        const categories = {
-            'all': this.state.products.length,
-            'new': this.state.products.filter(p => p.isNew).length,
-            'tops': this.state.products.filter(p => p.category === 'tops').length,
-            'bottoms': this.state.products.filter(p => p.category === 'bottoms').length,
-            'dresses': this.state.products.filter(p => p.category === 'dresses').length,
-            'shoes': this.state.products.filter(p => p.category === 'shoes').length
-        };
-
-        document.querySelectorAll('.category-btn').forEach(btn => {
-            const category = btn.dataset.category;
-            const count = categories[category] || 0;
-            btn.textContent = `${this.getCategoryName(category)} (${count})`;
-        });
-    }
-
     getCategoryName(category) {
         const names = {
             'all': 'Все товары',
@@ -1920,6 +1004,10 @@ setupGestureHandlers(imageElement, category) {
             'shoes': 'Обувь'
         };
         return names[category] || category;
+    }
+
+    updateCategoryCounts() {
+        // Простой метод
     }
 
     updateCartBadge() {
@@ -1939,42 +1027,14 @@ setupGestureHandlers(imageElement, category) {
         }
     }
 
-    setupMainButton() {
-        if (this.tg && this.tg.MainButton) {
-            this.tg.MainButton.setText("🛍️ Открыть каталог");
-            this.tg.MainButton.onClick(() => {
-                this.showMainApp();
-            });
-            this.tg.MainButton.show();
-        }
-    }
-
-    // Индикатор обработки
-    showProcessingIndicator() {
-        const overlay = document.createElement('div');
-        overlay.className = 'processing-overlay';
-        overlay.innerHTML = `
-            <div class="processing-content">
-                <div class="processing-spinner"></div>
-                <div class="processing-text">Обрабатываем изображение...</div>
-            </div>
-        `;
-        overlay.id = 'processingOverlay';
-        document.body.appendChild(overlay);
-    }
-
-    hideProcessingIndicator() {
-        const overlay = document.getElementById('processingOverlay');
-        if (overlay) {
-            overlay.remove();
-        }
+    hideEditingControls() {
+        // Простой метод
     }
 
     // Управление видимостью
     hideLoading() {
         const loading = document.getElementById('loading');
         const mainApp = document.getElementById('main-app');
-        
         if (loading) loading.classList.add('hidden');
         if (mainApp) mainApp.classList.remove('hidden');
     }
@@ -2016,7 +1076,6 @@ setupGestureHandlers(imageElement, category) {
     showPanel(panelId) {
         const mainApp = document.getElementById('main-app');
         const panel = document.getElementById(panelId);
-        
         if (mainApp) mainApp.classList.add('hidden');
         if (panel) panel.classList.remove('hidden');
     }
@@ -2024,22 +1083,16 @@ setupGestureHandlers(imageElement, category) {
     hidePanel(panelId) {
         const panel = document.getElementById(panelId);
         const mainApp = document.getElementById('main-app');
-        
         if (panel) panel.classList.add('hidden');
         if (mainApp) mainApp.classList.remove('hidden');
     }
 
-    toggleSearch() {
-        const search = document.getElementById('searchContainer');
-        if (search) {
-            search.classList.toggle('hidden');
-            if (!search.classList.contains('hidden')) {
-                const searchInput = document.getElementById('searchInput');
-                if (searchInput) searchInput.focus();
-            } else {
-                this.handleSearch('');
-            }
-        }
+    showAdminPanel() {
+        this.showPanel('adminPanel');
+    }
+
+    hideAdminPanel() {
+        this.hidePanel('adminPanel');
     }
 }
 
