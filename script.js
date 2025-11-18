@@ -1308,17 +1308,24 @@ class FashionApp {
     }
 
     // Переключение режима редактирования
-    toggleEditMode() {
-        this.isEditingMode = !this.isEditingMode;
-        this.addEditingControls();
+toggleEditMode() {
+    this.isEditingMode = !this.isEditingMode;
+    this.addEditingControls();
+    
+    if (this.isEditingMode) {
+        this.showAlert('Режим редактирования включен');
+        this.showGestureHint();
         
-        if (this.isEditingMode) {
-            this.showAlert('Режим редактирования: используйте жесты для масштабирования и перемещения одежды');
-        } else {
-            this.currentlyEditing = null;
-            this.showAlert('Режим редактирования выключен');
-        }
+        // Добавляем класс для индикации активного режима
+        document.querySelector('.model-2d-container')?.classList.add('editing-mode-active');
+    } else {
+        this.currentlyEditing = null;
+        this.showAlert('Режим редактирования выключен');
+        
+        // Убираем класс
+        document.querySelector('.model-2d-container')?.classList.remove('editing-mode-active');
     }
+}
 
     // Показываем дополнительные элементы управления для редактирования
     showEditingControls() {
@@ -1518,146 +1525,156 @@ class FashionApp {
     }
 
     // Настройка обработчиков жестов для масштабирования и перемещения
-    setupGestureHandlers(imageElement, category) {
-        if (!imageElement) return;
+setupGestureHandlers(imageElement, category) {
+    if (!imageElement) return;
 
-        let initialDistance = null;
-        let initialScale = 1;
-        let initialX = 0;
-        let initialY = 0;
-        let lastTouch = null;
+    let initialDistance = null;
+    let initialScale = 1;
+    let initialX = 0;
+    let initialY = 0;
+    let lastTouch = null;
+    let isDragging = false;
+    let isScaling = false;
 
-        // Обработчик для мыши (десктоп)
-        imageElement.addEventListener('mousedown', (e) => {
-            if (!this.isEditingMode) return;
+    // Обработчик для мыши (десктоп)
+    imageElement.addEventListener('mousedown', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectElementForEditing(category);
+        
+        initialX = e.clientX;
+        initialY = e.clientY;
+        initialScale = this.clothingTransformations[category].scale;
+        isDragging = true;
+        
+        const moveHandler = (moveEvent) => {
+            if (!this.isEditingMode || !isDragging) return;
             
-            e.preventDefault();
-            e.stopPropagation();
+            const deltaX = moveEvent.clientX - initialX;
+            const deltaY = moveEvent.clientY - initialY;
             
-            this.selectElementForEditing(category);
+            this.clothingTransformations[category].x += deltaX * 0.5;
+            this.clothingTransformations[category].y += deltaY * 0.5;
             
-            initialX = e.clientX;
-            initialY = e.clientY;
+            // Ограничиваем перемещение
+            this.clothingTransformations[category].x = Math.max(-100, Math.min(100, this.clothingTransformations[category].x));
+            this.clothingTransformations[category].y = Math.max(-100, Math.min(100, this.clothingTransformations[category].y));
+            
+            this.updateClothingElement(category);
+            this.updateSliders();
+            
+            initialX = moveEvent.clientX;
+            initialY = moveEvent.clientY;
+        };
+        
+        const upHandler = () => {
+            isDragging = false;
+            document.removeEventListener('mousemove', moveHandler);
+            document.removeEventListener('mouseup', upHandler);
+        };
+        
+        document.addEventListener('mousemove', moveHandler);
+        document.addEventListener('mouseup', upHandler);
+    });
+
+    // Обработчики для тач-устройств
+    imageElement.addEventListener('touchstart', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectElementForEditing(category);
+        
+        if (e.touches.length === 1) {
+            // Одно касание - перемещение
+            lastTouch = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+            };
             initialScale = this.clothingTransformations[category].scale;
+            isDragging = true;
+        } else if (e.touches.length === 2) {
+            // Два касания - масштабирование
+            initialDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+            initialScale = this.clothingTransformations[category].scale;
+            isScaling = true;
+            isDragging = false;
+        }
+    });
+
+    imageElement.addEventListener('touchmove', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (e.touches.length === 1 && lastTouch && isDragging) {
+            // Перемещение
+            const deltaX = e.touches[0].clientX - lastTouch.x;
+            const deltaY = e.touches[0].clientY - lastTouch.y;
             
-            const moveHandler = (moveEvent) => {
-                if (!this.isEditingMode) return;
-                
-                const deltaX = moveEvent.clientX - initialX;
-                const deltaY = moveEvent.clientY - initialY;
-                
-                this.clothingTransformations[category].x += deltaX * 0.5;
-                this.clothingTransformations[category].y += deltaY * 0.5;
-                
-                // Ограничиваем перемещение
-                this.clothingTransformations[category].x = Math.max(-100, Math.min(100, this.clothingTransformations[category].x));
-                this.clothingTransformations[category].y = Math.max(-100, Math.min(100, this.clothingTransformations[category].y));
-                
-                this.updateClothingElement(category);
-                this.updateSliders();
-                
-                initialX = moveEvent.clientX;
-                initialY = moveEvent.clientY;
+            this.clothingTransformations[category].x += deltaX * 0.5;
+            this.clothingTransformations[category].y += deltaY * 0.5;
+            
+            // Ограничиваем перемещение
+            this.clothingTransformations[category].x = Math.max(-100, Math.min(100, this.clothingTransformations[category].x));
+            this.clothingTransformations[category].y = Math.max(-100, Math.min(100, this.clothingTransformations[category].y));
+            
+            this.updateClothingElement(category);
+            this.updateSliders();
+            
+            lastTouch = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
             };
-            
-            const upHandler = () => {
-                document.removeEventListener('mousemove', moveHandler);
-                document.removeEventListener('mouseup', upHandler);
-            };
-            
-            document.addEventListener('mousemove', moveHandler);
-            document.addEventListener('mouseup', upHandler);
-        });
-
-        // Обработчики для тач-устройств
-        imageElement.addEventListener('touchstart', (e) => {
-            if (!this.isEditingMode) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            this.selectElementForEditing(category);
-            
-            if (e.touches.length === 1) {
-                // Одно касание - перемещение
-                lastTouch = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY
-                };
-                initialScale = this.clothingTransformations[category].scale;
-            } else if (e.touches.length === 2) {
-                // Два касания - масштабирование
-                initialDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-                initialScale = this.clothingTransformations[category].scale;
-            }
-        });
-
-        imageElement.addEventListener('touchmove', (e) => {
-            if (!this.isEditingMode) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (e.touches.length === 1 && lastTouch) {
-                // Перемещение
-                const deltaX = e.touches[0].clientX - lastTouch.x;
-                const deltaY = e.touches[0].clientY - lastTouch.y;
-                
-                this.clothingTransformations[category].x += deltaX * 0.5;
-                this.clothingTransformations[category].y += deltaY * 0.5;
-                
-                // Ограничиваем перемещение
-                this.clothingTransformations[category].x = Math.max(-100, Math.min(100, this.clothingTransformations[category].x));
-                this.clothingTransformations[category].y = Math.max(-100, Math.min(100, this.clothingTransformations[category].y));
-                
-                this.updateClothingElement(category);
-                this.updateSliders();
-                
-                lastTouch = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY
-                };
-            } else if (e.touches.length === 2 && initialDistance !== null) {
-                // Масштабирование
-                const currentDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-                const scale = initialScale * (currentDistance / initialDistance);
-                
-                // Ограничиваем масштаб
-                const clampedScale = Math.max(0.5, Math.min(2, scale));
-                this.clothingTransformations[category].scale = clampedScale;
-                
-                this.updateClothingElement(category);
-                this.updateSliders();
-            }
-        });
-
-        imageElement.addEventListener('touchend', (e) => {
-            if (!this.isEditingMode) return;
-            
-            lastTouch = null;
-            initialDistance = null;
-        });
-
-        // Обработчик колесика мыши для масштабирования
-        imageElement.addEventListener('wheel', (e) => {
-            if (!this.isEditingMode) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            this.selectElementForEditing(category);
-            
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            const newScale = this.clothingTransformations[category].scale + delta;
+        } else if (e.touches.length === 2 && initialDistance !== null && isScaling) {
+            // Масштабирование
+            const currentDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+            const scaleChange = currentDistance / initialDistance;
+            const newScale = initialScale * scaleChange;
             
             // Ограничиваем масштаб
-            const clampedScale = Math.max(0.5, Math.min(2, newScale));
+            const clampedScale = Math.max(0.3, Math.min(3, newScale));
             this.clothingTransformations[category].scale = clampedScale;
             
             this.updateClothingElement(category);
             this.updateSliders();
-        });
-    }
+        }
+    });
+
+    imageElement.addEventListener('touchend', (e) => {
+        if (!this.isEditingMode) return;
+        
+        lastTouch = null;
+        initialDistance = null;
+        isDragging = false;
+        isScaling = false;
+    });
+
+    // Обработчик колесика мыши для масштабирования
+    imageElement.addEventListener('wheel', (e) => {
+        if (!this.isEditingMode) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.selectElementForEditing(category);
+        
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newScale = this.clothingTransformations[category].scale + delta;
+        
+        // Ограничиваем масштаб
+        const clampedScale = Math.max(0.3, Math.min(3, newScale));
+        this.clothingTransformations[category].scale = clampedScale;
+        
+        this.updateClothingElement(category);
+        this.updateSliders();
+    });
+}
 
     // Вспомогательная функция для расчета расстояния между двумя точками
     getTouchDistance(touch1, touch2) {
