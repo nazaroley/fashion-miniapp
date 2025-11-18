@@ -1991,3 +1991,224 @@ body {
 .info-text strong {
     color: var(--text);
 }
+
+/* Элементы управления редактированием */
+.editing-controls {
+    background: rgba(30, 41, 59, 0.9);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin: 20px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+}
+
+.element-selector {
+    margin-bottom: 20px;
+}
+
+.element-selector h4 {
+    margin-bottom: 12px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.element-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.element-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+}
+
+.element-btn.active {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: var(--primary);
+}
+
+.element-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.element-btn img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.element-btn span {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.transform-controls {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border-light);
+}
+
+.control-group {
+    margin-bottom: 16px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.control-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface-light);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.control-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid var(--surface);
+}
+
+.control-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid var(--surface);
+}
+
+/* Улучшенные стили для слоев одежды в режиме редактирования */
+.clothing-layer {
+    transition: all 0.3s ease;
+}
+
+.clothing-image {
+    transition: transform 0.1s ease;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    transform-origin: center center;
+}
+
+.clothing-image:active {
+    cursor: grabbing;
+}
+
+/* Подсветка активного элемента */
+.clothing-layer.active {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Адаптивность для элементов управления */
+@media (max-width: 768px) {
+    .editing-controls {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    .element-buttons {
+        justify-content: center;
+    }
+    
+    .element-btn {
+        min-width: 70px;
+        padding: 8px;
+    }
+    
+    .element-btn img {
+        width: 35px;
+        height: 35px;
+    }
+}
+
+/* Анимации для трансформаций */
+@keyframes scaleIn {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.editing-controls {
+    animation: scaleIn 0.3s ease-out;
+}
+
+/* Улучшенные стили для интерактивных элементов */
+.model-btn.active {
+    background: var(--secondary) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* Подсказки для пользователя */
+.fitting-hint {
+    text-align: center;
+    padding: 12px;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius);
+    margin: 10px 20px;
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.4;
+}
+
+.fitting-hint strong {
+    color: var(--text);
+}
+
+/* Улучшенная визуальная обратная связь */
+.clothing-image {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.clothing-image:hover {
+    filter: drop-shadow(0 4px 8px rgba(139, 92, 246, 0.4));
+}
+
+/* Анимация появления элементов управления */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.transform-controls {
+    animation: slideUp 0.3s ease-out;
+}
