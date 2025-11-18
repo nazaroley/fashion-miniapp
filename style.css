@@ -2562,3 +2562,46 @@ body {
     color: var(--primary);
     font-weight: 700;
 }
+
+/* Улучшенные стили для мобильных жестов */
+.clothing-image {
+    transition: transform 0.1s ease;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.model-2d-container {
+    touch-action: none;
+}
+
+/* Улучшенная обратная связь при касании */
+.clothing-image:active {
+    opacity: 0.8;
+}
+
+/* Индикатор активного редактирования */
+.editing-mode-active .clothing-image {
+    cursor: move;
+}
+
+/* Подсказка для пользователя */
+.gesture-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
