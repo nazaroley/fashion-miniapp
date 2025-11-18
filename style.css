@@ -36,6 +36,7 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     position: relative;
+    touch-action: pan-x pan-y;
 }
 
 /* Анимированный фон */
@@ -211,6 +212,27 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.loading-screen {
+    background: linear-gradient(135deg, #7c3aed 0%, #0891b2 100%) !important;
+}
+
+.loader p {
+    margin-top: 15px;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+/* Анимация пульсации для текста загрузки */
+@keyframes pulseText {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+.loader p {
+    animation: pulseText 2s ease-in-out infinite;
 }
 
 /* Главное приложение */
@@ -1239,10 +1261,28 @@ body {
     pointer-events: none;
 }
 
+/* Стили для трансформируемых слоев */
+.clothing-layer.transformable {
+    pointer-events: auto;
+}
+
 .clothing-image {
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
+    cursor: grab;
+    transition: transform 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.clothing-image:active {
+    cursor: grabbing;
+}
+
+.clothing-layer.dragging .clothing-image {
+    cursor: grabbing;
 }
 
 /* Специфичные стили для разных типов одежды на локальных моделях */
@@ -1333,6 +1373,99 @@ body {
 
 .model-btn.active {
     background: var(--secondary);
+}
+
+/* Инструменты трансформации */
+.transform-controls {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(30, 41, 59, 0.95);
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    z-index: 10;
+    box-shadow: var(--shadow);
+}
+
+.control-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    user-select: none;
+    border: none;
+}
+
+.control-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.control-btn.reset {
+    background: var(--secondary);
+}
+
+.control-btn.reset:hover {
+    background: #e67e22;
+}
+
+/* Подсказки для контролов */
+.control-btn {
+    position: relative;
+}
+
+.control-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.control-btn:hover::after {
+    opacity: 1;
+}
+
+/* Раздел инструментов трансформации */
+.transformation-tools {
+    padding: 15px 20px;
+    background: rgba(30, 41, 59, 0.7);
+    border-radius: var(--radius);
+    margin: 15px 20px;
+    border: 1px solid var(--border);
+}
+
+.transformation-tools h4 {
+    margin-bottom: 10px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.tools-hint {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
 }
 
 .current-outfit {
@@ -1778,6 +1911,55 @@ body {
     height: 18px;
 }
 
+/* Индикатор обработки изображений */
+.processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+}
+
+.processing-content {
+    background: var(--surface);
+    padding: 30px;
+    border-radius: var(--radius-lg);
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    max-width: 300px;
+    width: 90%;
+}
+
+.processing-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--border);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+.processing-text {
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.processing-subtext {
+    color: var(--text-light);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
 /* Адаптивность */
 @media (min-width: 768px) {
     .products-grid {
@@ -1894,1023 +2076,4 @@ body {
 ::selection {
     background: rgba(139, 92, 246, 0.3);
     color: var(--text);
-}
-.loading-screen {
-    background: linear-gradient(135deg, #7c3aed 0%, #0891b2 100%) !important;
-}
-
-.loader p {
-    margin-top: 15px;
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 500;
-}
-
-/* Анимация пульсации для текста загрузки */
-@keyframes pulseText {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-}
-
-.loader p {
-    animation: pulseText 2s ease-in-out infinite;
-}
-
-/* Индикатор обработки изображений */
-.processing-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    backdrop-filter: blur(10px);
-}
-
-.processing-content {
-    background: var(--surface);
-    padding: 30px;
-    border-radius: var(--radius-lg);
-    text-align: center;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border);
-    max-width: 300px;
-    width: 90%;
-}
-
-.processing-spinner {
-    width: 50px;
-    height: 50px;
-    border: 3px solid var(--border);
-    border-top: 3px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-.processing-text {
-    color: var(--text);
-    font-weight: 600;
-    margin-bottom: 10px;
-    font-size: 16px;
-}
-
-.processing-subtext {
-    color: var(--text-light);
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-/* Информация об автоматической обработке */
-.processing-info {
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid var(--primary);
-    border-radius: var(--radius);
-    padding: 12px;
-    margin: 10px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.info-icon {
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-.info-text {
-    font-size: 14px;
-    color: var(--text-light);
-    line-height: 1.4;
-}
-
-.info-text strong {
-    color: var(--text);
-}
-
-/* Элементы управления редактированием */
-.editing-controls {
-    background: rgba(30, 41, 59, 0.9);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin: 20px;
-    border: 1px solid var(--border);
-    backdrop-filter: blur(10px);
-}
-
-.element-selector {
-    margin-bottom: 20px;
-}
-
-.element-selector h4 {
-    margin-bottom: 12px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.element-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.element-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 80px;
-}
-
-.element-btn.active {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--primary);
-}
-
-.element-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.element-btn img {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-.element-btn span {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-light);
-    text-align: center;
-}
-
-.transform-controls {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius);
-    padding: 16px;
-    border: 1px solid var(--border-light);
-}
-
-.control-group {
-    margin-bottom: 16px;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-light);
-    font-size: 14px;
-}
-
-.control-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--surface-light);
-    outline: none;
-    -webkit-appearance: none;
-}
-
-.control-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid var(--surface);
-}
-
-.control-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid var(--surface);
-}
-
-/* Улучшенные стили для слоев одежды в режиме редактирования */
-.clothing-layer {
-    transition: all 0.3s ease;
-}
-
-.clothing-image {
-    transition: transform 0.1s ease;
-    cursor: grab;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    transform-origin: center center;
-}
-
-.clothing-image:active {
-    cursor: grabbing;
-}
-
-/* Подсветка активного элемента */
-.clothing-layer.active {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-
-/* Адаптивность для элементов управления */
-@media (max-width: 768px) {
-    .editing-controls {
-        margin: 10px;
-        padding: 15px;
-    }
-    
-    .element-buttons {
-        justify-content: center;
-    }
-    
-    .element-btn {
-        min-width: 70px;
-        padding: 8px;
-    }
-    
-    .element-btn img {
-        width: 35px;
-        height: 35px;
-    }
-}
-
-/* Анимации для трансформаций */
-@keyframes scaleIn {
-    from {
-        transform: scale(0.8);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.editing-controls {
-    animation: scaleIn 0.3s ease-out;
-}
-
-/* Улучшенные стили для интерактивных элементов */
-.model-btn.active {
-    background: var(--secondary) !important;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-}
-
-/* Подсказки для пользователя */
-.fitting-hint {
-    text-align: center;
-    padding: 12px;
-    background: rgba(139, 92, 246, 0.15);
-    border: 1px solid var(--primary);
-    border-radius: var(--radius);
-    margin: 10px 20px;
-    font-size: 14px;
-    color: var(--text-light);
-    line-height: 1.4;
-}
-
-.fitting-hint strong {
-    color: var(--text);
-}
-
-/* Улучшенная визуальная обратная связь */
-.clothing-image {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-.clothing-image:hover {
-    filter: drop-shadow(0 4px 8px rgba(139, 92, 246, 0.4));
-}
-
-/* Анимация появления элементов управления */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.transform-controls {
-    animation: slideUp 0.3s ease-out;
-}
-
-/* Стили для редактирования одежды в примерочной */
-.editing-controls {
-    background: rgba(30, 41, 59, 0.9);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin: 20px 0;
-    border: 2px solid var(--primary);
-    backdrop-filter: blur(10px);
-}
-
-.element-selector {
-    margin-bottom: 20px;
-}
-
-.element-selector h4 {
-    margin-bottom: 12px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.element-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.element-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 80px;
-    backdrop-filter: blur(10px);
-}
-
-.element-btn.active {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--primary);
-}
-
-.element-btn img {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    object-fit: cover;
-}
-
-.element-btn span {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    text-align: center;
-}
-
-.transform-controls {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius);
-    padding: 20px;
-    border: 1px solid var(--border);
-}
-
-.transform-controls h4 {
-    margin-bottom: 16px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.control-group {
-    margin-bottom: 16px;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-light);
-    font-size: 14px;
-}
-
-.control-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    outline: none;
-    -webkit-appearance: none;
-}
-
-.control-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: var(--shadow);
-}
-
-.control-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: var(--shadow);
-}
-
-/* Индикатор редактирования */
-.editing-indicator {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(139, 92, 246, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: var(--radius);
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 10;
-    backdrop-filter: blur(10px);
-}
-
-/* Подсветка редактируемого элемента */
-.clothing-layer.editing {
-    outline: 3px solid var(--primary);
-    outline-offset: 2px;
-    border-radius: 8px;
-}
-
-/* Адаптивность для элементов управления */
-@media (max-width: 768px) {
-    .element-buttons {
-        justify-content: center;
-    }
-    
-    .element-btn {
-        min-width: 70px;
-        padding: 8px;
-    }
-    
-    .element-btn img {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .editing-controls {
-        padding: 15px;
-        margin: 15px 0;
-    }
-}
-
-/* Анимация для трансформаций */
-.clothing-image {
-    transition: transform 0.1s ease;
-}
-
-/* Улучшенные стили для подсказок */
-.fitting-hint {
-    background: rgba(139, 92, 246, 0.15) !important;
-    border-left: 4px solid var(--primary);
-}
-
-.fitting-hint strong {
-    color: var(--primary);
-    font-weight: 700;
-}
-
-/* Стили для редактирования одежды в примерочной */
-.editing-controls {
-    background: rgba(30, 41, 59, 0.9);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin: 20px 0;
-    border: 2px solid var(--primary);
-    backdrop-filter: blur(10px);
-}
-
-.element-selector {
-    margin-bottom: 20px;
-}
-
-.element-selector h4 {
-    margin-bottom: 12px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.element-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.element-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 80px;
-    backdrop-filter: blur(10px);
-}
-
-.element-btn.active {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--primary);
-}
-
-.element-btn img {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    object-fit: cover;
-}
-
-.element-btn span {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    text-align: center;
-}
-
-.transform-controls {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius);
-    padding: 20px;
-    border: 1px solid var(--border);
-}
-
-.transform-controls h4 {
-    margin-bottom: 16px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.control-group {
-    margin-bottom: 16px;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-light);
-    font-size: 14px;
-}
-
-.control-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    outline: none;
-    -webkit-appearance: none;
-}
-
-.control-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: var(--shadow);
-}
-
-.control-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: var(--shadow);
-}
-
-/* Индикатор редактирования */
-.editing-indicator {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(139, 92, 246, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: var(--radius);
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 10;
-    backdrop-filter: blur(10px);
-}
-
-/* Подсветка редактируемого элемента */
-.clothing-layer.editing {
-    outline: 3px solid var(--primary);
-    outline-offset: 2px;
-    border-radius: 8px;
-}
-
-/* Адаптивность для элементов управления */
-@media (max-width: 768px) {
-    .element-buttons {
-        justify-content: center;
-    }
-    
-    .element-btn {
-        min-width: 70px;
-        padding: 8px;
-    }
-    
-    .element-btn img {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .editing-controls {
-        padding: 15px;
-        margin: 15px 0;
-    }
-}
-
-/* Анимация для трансформаций */
-.clothing-image {
-    transition: transform 0.1s ease;
-}
-
-/* Улучшенные стили для подсказок */
-.fitting-hint {
-    background: rgba(139, 92, 246, 0.15) !important;
-    border-left: 4px solid var(--primary);
-}
-
-.fitting-hint strong {
-    color: var(--primary);
-    font-weight: 700;
-}
-
-/* Улучшенные стили для мобильных жестов */
-.clothing-image {
-    transition: transform 0.1s ease;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-.model-2d-container {
-    touch-action: none;
-}
-
-/* Улучшенная обратная связь при касании */
-.clothing-image:active {
-    opacity: 0.8;
-}
-
-/* Индикатор активного редактирования */
-.editing-mode-active .clothing-image {
-    cursor: move;
-}
-
-/* Подсказка для пользователя */
-.gesture-hint {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 20px;
-    font-size: 14px;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-    animation: fadeInOut 3s ease-in-out;
-}
-
-@keyframes fadeInOut {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 1; }
-}
-
-/* Стили для редактирования одежды в примерочной */
-.editing-controls {
-    background: rgba(30, 41, 59, 0.9);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    margin: 20px 0;
-    border: 2px solid var(--primary);
-    backdrop-filter: blur(10px);
-}
-
-.element-selector {
-    margin-bottom: 20px;
-}
-
-.element-selector h4 {
-    margin-bottom: 12px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.element-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.element-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 80px;
-    backdrop-filter: blur(10px);
-}
-
-.element-btn.active {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--primary);
-}
-
-.element-btn img {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    object-fit: cover;
-}
-
-.element-btn span {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    text-align: center;
-}
-
-.transform-controls {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius);
-    padding: 20px;
-    border: 1px solid var(--border);
-}
-
-.transform-controls h4 {
-    margin-bottom: 16px;
-    color: var(--text);
-    font-size: 16px;
-}
-
-.quick-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.quick-buttons .model-btn {
-    padding: 12px;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.control-group {
-    margin-bottom: 16px;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-light);
-    font-size: 14px;
-}
-
-.control-slider {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    outline: none;
-    -webkit-appearance: none;
-}
-
-.control-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: var(--shadow);
-}
-
-.control-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--primary);
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: var(--shadow);
-}
-
-/* Индикатор редактирования */
-.editing-indicator {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(139, 92, 246, 0.9);
-    color: white;
-    padding: 8px 12px;
-    border-radius: var(--radius);
-    font-size: 12px;
-    font-weight: 600;
-    z-index: 10;
-    backdrop-filter: blur(10px);
-}
-
-/* Подсветка редактируемого элемента */
-.clothing-layer.editing {
-    outline: 3px solid var(--primary);
-    outline-offset: 2px;
-    border-radius: 8px;
-}
-
-/* Адаптивность для элементов управления */
-@media (max-width: 768px) {
-    .element-buttons {
-        justify-content: center;
-    }
-    
-    .element-btn {
-        min-width: 70px;
-        padding: 8px;
-    }
-    
-    .element-btn img {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .editing-controls {
-        padding: 15px;
-        margin: 15px 0;
-    }
-}
-
-/* Анимация для трансформаций */
-.clothing-image {
-    transition: transform 0.1s ease;
-}
-
-/* Улучшенные стили для подсказок */
-.fitting-hint {
-    background: rgba(139, 92, 246, 0.15) !important;
-    border-left: 4px solid var(--primary);
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.fitting-hint strong {
-    color: var(--primary);
-    font-weight: 700;
-}
-
-/* Убедимся, что изображения реагируют на тапы */
-.clothing-image {
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.clothing-image:active {
-    opacity: 0.8;
-}
-
-/* Подсветка выбранного элемента */
-.clothing-layer.selected {
-    outline: 3px solid #10b981;
-    outline-offset: 2px;
-    border-radius: 8px;
-}
-
-/* Улучшенные стили управления */
-.editing-controls {
-    background: rgba(30, 41, 59, 0.95);
-    border-radius: 16px;
-    padding: 20px;
-    margin: 20px 0;
-    border: 2px solid #8b5cf6;
-    backdrop-filter: blur(10px);
-}
-
-.quick-buttons {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    justify-content: center;
-}
-
-.control-btn {
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
-}
-
-.control-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-}
-
-.reset-btn {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-
-.fitting-hint {
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid #8b5cf6;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    line-height: 1.5;
-    text-align: center;
-}
-
-.fitting-hint strong {
-    color: #8b5cf6;
-    font-weight: 700;
-}
-
-.element-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.element-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 80px;
-}
-
-.element-btn.active {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: #8b5cf6;
-    transform: scale(1.05);
-}
-
-.element-btn img {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    object-fit: cover;
-}
-
-.element-btn span {
-    font-size: 12px;
-    font-weight: 600;
-    color: white;
 }
