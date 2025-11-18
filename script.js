@@ -1321,59 +1321,59 @@ class FashionApp {
     }
 
     // Показываем дополнительные элементы управления для редактирования
-    showEditingControls() {
-        let controlsContainer = document.getElementById('editingControls');
+showEditingControls() {
+    let controlsContainer = document.getElementById('editingControls');
+    
+    if (!controlsContainer) {
+        controlsContainer = document.createElement('div');
+        controlsContainer.id = 'editingControls';
+        controlsContainer.className = 'editing-controls';
+        controlsContainer.innerHTML = `
+            <div class="fitting-hint">
+                ✨ Режим редактирования<br>
+                <strong>👆 Тап - выбрать элемент</strong><br>
+                <strong>👆 Перетаскивание - переместить</strong><br>
+                <strong>👆👆 Двойной тап - масштабировать</strong><br>
+                <strong>🔄 Колесико мыши - масштаб</strong>
+            </div>
+            <div class="element-selector">
+                <h4>Выберите элемент:</h4>
+                <div class="element-buttons" id="elementButtons"></div>
+            </div>
+            <div class="transform-controls hidden" id="transformControls">
+                <h4>Управление выбранным элементом:</h4>
+                
+                <div class="quick-buttons">
+                    <button class="control-btn" onclick="app.zoomOut()">🔍 Уменьшить</button>
+                    <button class="control-btn" onclick="app.zoomIn()">🔍 Увеличить</button>
+                    <button class="control-btn reset-btn" onclick="app.resetTransformation()">🔄 Сбросить</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>Масштаб: <span id="scaleValue">100%</span></label>
+                    <input type="range" id="scaleSlider" min="30" max="300" value="100" class="control-slider">
+                </div>
+                <div class="control-group">
+                    <label>Позиция X: <span id="xValue">0</span></label>
+                    <input type="range" id="xSlider" min="-100" max="100" value="0" class="control-slider">
+                </div>
+                <div class="control-group">
+                    <label>Позиция Y: <span id="yValue">0</span></label>
+                    <input type="range" id="ySlider" min="-100" max="100" value="0" class="control-slider">
+                </div>
+            </div>
+        `;
         
-        if (!controlsContainer) {
-            controlsContainer = document.createElement('div');
-            controlsContainer.id = 'editingControls';
-            controlsContainer.className = 'editing-controls';
-            controlsContainer.innerHTML = `
-                <div class="fitting-hint">
-                    ✨ Режим редактирования<br>
-                    <strong>👆 Тап по одежде - выбрать</strong><br>
-                    <strong>👆 Перетаскивание - переместить</strong><br>
-                    <strong>✌️ Двойной тап - масштабировать</strong><br>
-                    <strong>🔘 Кнопки ниже - точная настройка</strong>
-                </div>
-                <div class="element-selector">
-                    <h4>Редактировать:</h4>
-                    <div class="element-buttons" id="elementButtons"></div>
-                </div>
-                <div class="transform-controls hidden" id="transformControls">
-                    <h4>Настройки:</h4>
-                    
-                    <div class="quick-buttons">
-                        <button class="model-btn" onclick="app.zoomOut()">🔍 Уменьшить</button>
-                        <button class="model-btn" onclick="app.zoomIn()">🔍 Увеличить</button>
-                        <button class="model-btn" onclick="app.resetTransformation()">🔄 Сбросить</button>
-                    </div>
-                    
-                    <div class="control-group">
-                        <label>Масштаб: <span id="scaleValue">100%</span></label>
-                        <input type="range" id="scaleSlider" min="30" max="300" value="100" class="control-slider">
-                    </div>
-                    <div class="control-group">
-                        <label>Позиция X: <span id="xValue">0</span></label>
-                        <input type="range" id="xSlider" min="-100" max="100" value="0" class="control-slider">
-                    </div>
-                    <div class="control-group">
-                        <label>Позиция Y: <span id="yValue">0</span></label>
-                        <input type="range" id="ySlider" min="-100" max="100" value="0" class="control-slider">
-                    </div>
-                </div>
-            `;
-            
-            const modelSection = document.querySelector('.model-section');
-            if (modelSection) {
-                modelSection.appendChild(controlsContainer);
-            }
+        const modelSection = document.querySelector('.model-section');
+        if (modelSection) {
+            modelSection.appendChild(controlsContainer);
         }
-
-        controlsContainer.classList.remove('hidden');
-        this.renderElementButtons();
-        this.setupTransformSliders();
     }
+
+    controlsContainer.classList.remove('hidden');
+    this.renderElementButtons();
+    this.setupTransformSliders();
+}
 
     // Скрываем элементы управления редактированием
     hideEditingControls() {
@@ -1412,12 +1412,24 @@ class FashionApp {
     }
 
     // Выбор элемента для редактирования
-    selectElementForEditing(category) {
-        this.currentlyEditing = category;
-        this.renderElementButtons();
-        this.showTransformControls();
-        this.updateSliders();
+selectElementForEditing(category) {
+    this.currentlyEditing = category;
+    this.renderElementButtons();
+    this.showTransformControls();
+    this.updateSliders();
+    
+    // Визуальная обратная связь
+    document.querySelectorAll('.clothing-layer').forEach(layer => {
+        layer.classList.remove('selected');
+    });
+    
+    const selectedLayer = document.querySelector(`.${category}-layer`);
+    if (selectedLayer) {
+        selectedLayer.classList.add('selected');
     }
+    
+    this.showAlert(`Выбран: ${this.getCategoryName(category)}`);
+}
 
     // Показываем слайдеры управления трансформацией
     showTransformControls() {
