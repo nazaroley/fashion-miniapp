@@ -2801,3 +2801,116 @@ body {
     color: var(--primary);
     font-weight: 700;
 }
+
+/* Убедимся, что изображения реагируют на тапы */
+.clothing-image {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.clothing-image:active {
+    opacity: 0.8;
+}
+
+/* Подсветка выбранного элемента */
+.clothing-layer.selected {
+    outline: 3px solid #10b981;
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* Улучшенные стили управления */
+.editing-controls {
+    background: rgba(30, 41, 59, 0.95);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 2px solid #8b5cf6;
+    backdrop-filter: blur(10px);
+}
+
+.quick-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.control-btn {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.reset-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.fitting-hint {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid #8b5cf6;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.fitting-hint strong {
+    color: #8b5cf6;
+    font-weight: 700;
+}
+
+.element-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.element-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.element-btn.active {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: #8b5cf6;
+    transform: scale(1.05);
+}
+
+.element-btn img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.element-btn span {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
