@@ -1,3 +1,212 @@
+// Базовые данные
+const BASE_PRODUCTS = {
+    products: [
+        {
+            id: 1,
+            name: "Белая футболка Oversize",
+            description: "Стильная футболка oversize из премиального хлопка. Идеальна для повседневной носки.",
+            price: 2499,
+            oldPrice: 2999,
+            category: "tops",
+            images: ["https://placehold.co/400x500/ffffff/333333?text=White+T-Shirt"],
+            modelImages: {
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
+            },
+            sizes: ["S", "M", "L", "XL"],
+            colors: ["Белый", "Черный", "Серый"],
+            inStock: true,
+            isNew: true,
+            isSale: true,
+            isHot: false,
+            tags: ["oversize", "хлопок", "повседневная"],
+            material: "100% хлопок",
+            care: "Машинная стирка при 30°C",
+            fitting: {
+                type: "tops",
+                layer: "top"
+            }
+        },
+        {
+            id: 2,
+            name: "Синие джинсы Slim Fit",
+            description: "Классические джинсы slim fit с современным кроем. 98% хлопок, 2% эластан.",
+            price: 4599,
+            oldPrice: null,
+            category: "bottoms",
+            images: ["https://placehold.co/400x500/1e3a8a/ffffff?text=Blue+Jeans"],
+            modelImages: {
+                female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+                male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
+            },
+            sizes: ["28", "30", "32", "34", "36"],
+            colors: ["Синий", "Черный", "Светло-синий"],
+            inStock: true,
+            isNew: false,
+            isSale: false,
+            isHot: true,
+            tags: ["slim fit", "джинсы", "базовые"],
+            material: "98% хлопок, 2% эластан",
+            care: "Машинная стирка при 30°C",
+            fitting: {
+                type: "bottoms",
+                layer: "bottom"
+            }
+        }
+    ],
+    adminUsers: [447355860]
+};
+
+// Базовая модель
+const MODEL_BASES = {
+    female: "female.png",
+    male: "male.png"
+};
+
+// Хранилище
+const Storage = {
+    KEYS: {
+        PRODUCTS: 'fashionhub_products',
+        ORDERS: 'fashionhub_orders',
+        CART: 'fashionhub_cart',
+        FAVORITES: 'fashionhub_favorites',
+        SETTINGS: 'fashionhub_settings'
+    },
+
+    getProducts() {
+        try {
+            const stored = localStorage.getItem(this.KEYS.PRODUCTS);
+            return stored ? JSON.parse(stored) : BASE_PRODUCTS.products;
+        } catch (error) {
+            console.error('Error loading products:', error);
+            return BASE_PRODUCTS.products;
+        }
+    },
+
+    saveProducts(products) {
+        try {
+            localStorage.setItem(this.KEYS.PRODUCTS, JSON.stringify(products));
+        } catch (error) {
+            console.error('Error saving products:', error);
+        }
+    },
+
+    addProduct(product) {
+        const products = this.getProducts();
+        const maxId = products.length > 0 ? Math.max(...products.map(p => p.id)) : 0;
+        product.id = maxId + 1;
+        product.createdAt = new Date().toISOString();
+        
+        products.push(product);
+        this.saveProducts(products);
+        return product;
+    },
+
+    updateProduct(productId, updates) {
+        const products = this.getProducts();
+        const index = products.findIndex(p => p.id === productId);
+        if (index !== -1) {
+            products[index] = { ...products[index], ...updates };
+            this.saveProducts(products);
+            return true;
+        }
+        return false;
+    },
+
+    deleteProduct(productId) {
+        const products = this.getProducts();
+        const filtered = products.filter(p => p.id !== productId);
+        this.saveProducts(filtered);
+        return filtered;
+    },
+
+    getOrders() {
+        try {
+            const stored = localStorage.getItem(this.KEYS.ORDERS);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            return [];
+        }
+    },
+
+    saveOrder(order) {
+        const orders = this.getOrders();
+        order.id = orders.length + 1;
+        order.createdAt = new Date().toISOString();
+        order.status = 'new';
+        orders.push(order);
+        localStorage.setItem(this.KEYS.ORDERS, JSON.stringify(orders));
+        return order;
+    },
+
+    updateOrderStatus(orderId, status) {
+        const orders = this.getOrders();
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = status;
+            order.updatedAt = new Date().toISOString();
+            localStorage.setItem(this.KEYS.ORDERS, JSON.stringify(orders));
+            return true;
+        }
+        return false;
+    },
+
+    getCart() {
+        try {
+            const stored = localStorage.getItem(this.KEYS.CART);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            return [];
+        }
+    },
+
+    saveCart(cart) {
+        try {
+            localStorage.setItem(this.KEYS.CART, JSON.stringify(cart));
+        } catch (error) {
+            console.error('Error saving cart:', error);
+        }
+    },
+
+    getFavorites() {
+        try {
+            const stored = localStorage.getItem(this.KEYS.FAVORITES);
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Error loading favorites:', error);
+            return [];
+        }
+    },
+
+    saveFavorites(favorites) {
+        try {
+            localStorage.setItem(this.KEYS.FAVORITES, JSON.stringify(favorites));
+        } catch (error) {
+            console.error('Error saving favorites:', error);
+        }
+    },
+
+    getSettings() {
+        try {
+            const stored = localStorage.getItem(this.KEYS.SETTINGS);
+            return stored ? JSON.parse(stored) : {};
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            return {};
+        }
+    },
+
+    saveSettings(settings) {
+        try {
+            localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
+        } catch (error) {
+            console.error('Error saving settings:', error);
+        }
+    }
+};
+
 // Главное приложение
 class FashionApp {
     constructor() {
@@ -1795,3 +2004,27 @@ class FashionApp {
         }
     }
 }
+
+// Запуск приложения
+let app;
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded - Initializing app...');
+    app = new FashionApp();
+});
+
+// Принудительное скрытие загрузки через 5 секунд на случай ошибки
+setTimeout(() => {
+    const loading = document.getElementById('loading');
+    const mainApp = document.getElementById('main-app');
+    
+    if (loading && !loading.classList.contains('hidden')) {
+        console.log('Forcing loading screen hide after timeout');
+        loading.classList.add('hidden');
+        if (mainApp) {
+            mainApp.classList.remove('hidden');
+        }
+    }
+}, 5000);
+
+window.app = app;
