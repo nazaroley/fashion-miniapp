@@ -2387,3 +2387,178 @@ body {
     color: var(--primary);
     font-weight: 700;
 }
+
+/* Стили для редактирования одежды в примерочной */
+.editing-controls {
+    background: rgba(30, 41, 59, 0.9);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin: 20px 0;
+    border: 2px solid var(--primary);
+    backdrop-filter: blur(10px);
+}
+
+.element-selector {
+    margin-bottom: 20px;
+}
+
+.element-selector h4 {
+    margin-bottom: 12px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.element-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.element-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    backdrop-filter: blur(10px);
+}
+
+.element-btn.active {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: var(--primary);
+}
+
+.element-btn img {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.element-btn span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+}
+
+.transform-controls {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid var(--border);
+}
+
+.transform-controls h4 {
+    margin-bottom: 16px;
+    color: var(--text);
+    font-size: 16px;
+}
+
+.control-group {
+    margin-bottom: 16px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.control-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.control-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: var(--shadow);
+}
+
+.control-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: var(--shadow);
+}
+
+/* Индикатор редактирования */
+.editing-indicator {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(139, 92, 246, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+}
+
+/* Подсветка редактируемого элемента */
+.clothing-layer.editing {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+/* Адаптивность для элементов управления */
+@media (max-width: 768px) {
+    .element-buttons {
+        justify-content: center;
+    }
+    
+    .element-btn {
+        min-width: 70px;
+        padding: 8px;
+    }
+    
+    .element-btn img {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .editing-controls {
+        padding: 15px;
+        margin: 15px 0;
+    }
+}
+
+/* Анимация для трансформаций */
+.clothing-image {
+    transition: transform 0.1s ease;
+}
+
+/* Улучшенные стили для подсказок */
+.fitting-hint {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border-left: 4px solid var(--primary);
+}
+
+.fitting-hint strong {
+    color: var(--primary);
+    font-weight: 700;
+}
