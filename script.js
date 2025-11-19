@@ -284,8 +284,8 @@ class ClothingTransformer {
         if (!image) return;
 
         // УВЕЛИЧЕННЫЕ границы перемещения (почти весь экран примерочной)
-        const maxMoveX = 200;  // Большая область по горизонтали
-        const maxMoveY = 250;  // Большая область по вертикали
+        const maxMoveX = 120;  // Большая область по горизонтали
+        const maxMoveY = 175;  // Большая область по вертикали
         
         this.scale = Math.max(0.3, Math.min(3, this.scale));
         this.translateX = Math.max(-maxMoveX, Math.min(maxMoveX, this.translateX));
