@@ -1,4 +1,4 @@
-// Базовые данны
+// Базовые данные
 const BASE_PRODUCTS = {
     products: [
         {
@@ -115,140 +115,58 @@ const MODEL_BASES = {
     male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
 };
 
-// Класс для трансформации одежды
-// Класс для трансформации одежды
-// Класс для трансформации одежды
+// Простой класс для трансформации одежды
 class ClothingTransformer {
     constructor(layerElement, layerType) {
         this.layerElement = layerElement;
         this.layerType = layerType;
-        this.currentTransform = {
-            scale: 1.0,
-            translateX: 0,
-            translateY: 0,
-            rotation: 0
-        };
-        this.isDragging = false;
+        this.scale = 1.0;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.rotation = 0;
         
-        this.initLayer();
-        this.bindEvents();
+        this.init();
     }
 
-    initLayer() {
-        // Устанавливаем начальные стили
-        this.layerElement.style.position = 'absolute';
-        this.layerElement.style.top = '0';
-        this.layerElement.style.left = '0';
-        this.layerElement.style.width = '100%';
-        this.layerElement.style.height = '100%';
-        this.layerElement.style.display = 'flex';
-        this.layerElement.style.alignItems = 'center';
-        this.layerElement.style.justifyContent = 'center';
-        this.layerElement.style.zIndex = '10';
-        this.layerElement.style.pointerEvents = 'auto';
-        
-        const image = this.layerElement.querySelector('.clothing-image');
-        if (image) {
-            image.style.pointerEvents = 'auto';
-            image.style.cursor = 'grab';
-            image.style.touchAction = 'none';
-            image.style.userSelect = 'none';
-            image.style.maxWidth = '90%';
-            image.style.maxHeight = '90%';
-            image.style.objectFit = 'contain';
-        }
-        
-        this.createControls();
-    }
-
-    createControls() {
-        // Удаляем старые контролы
-        const oldControls = this.layerElement.querySelector('.transform-controls');
-        if (oldControls) oldControls.remove();
-
-        const controls = document.createElement('div');
-        controls.className = 'transform-controls';
-        controls.style.cssText = `
-            position: absolute;
-            top: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-            background: rgba(30, 41, 59, 0.95);
-            padding: 8px 12px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            z-index: 1000;
-            pointer-events: auto;
-        `;
-
-        controls.innerHTML = `
-            <button class="control-btn" title="Увеличить" style="
-                width: 32px; height: 32px; border-radius: 50%; 
-                background: var(--primary); color: white; border: none; 
-                cursor: pointer; display: flex; align-items: center; 
-                justify-content: center; font-size: 14px;">➕</button>
-            <button class="control-btn" title="Уменьшить" style="
-                width: 32px; height: 32px; border-radius: 50%; 
-                background: var(--primary); color: white; border: none; 
-                cursor: pointer; display: flex; align-items: center; 
-                justify-content: center; font-size: 14px;">➖</button>
-            <button class="control-btn" title="Повернуть влево" style="
-                width: 32px; height: 32px; border-radius: 50%; 
-                background: var(--primary); color: white; border: none; 
-                cursor: pointer; display: flex; align-items: center; 
-                justify-content: center; font-size: 14px;">↶</button>
-            <button class="control-btn" title="Повернуть вправо" style="
-                width: 32px; height: 32px; border-radius: 50%; 
-                background: var(--primary); color: white; border: none; 
-                cursor: pointer; display: flex; align-items: center; 
-                justify-content: center; font-size: 14px;">↷</button>
-            <button class="control-btn" title="Сбросить" style="
-                width: 32px; height: 32px; border-radius: 50%; 
-                background: var(--secondary); color: white; border: none; 
-                cursor: pointer; display: flex; align-items: center; 
-                justify-content: center; font-size: 14px;">🔄</button>
-        `;
-
-        this.layerElement.appendChild(controls);
-        this.bindControlEvents(controls);
-    }
-
-    bindControlEvents(controls) {
+    init() {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        controls.querySelectorAll('.control-btn').forEach((btn, index) => {
+        // Делаем изображение перетаскиваемым
+        image.style.cursor = 'grab';
+        image.style.touchAction = 'none';
+        image.style.userSelect = 'none';
+        image.style.pointerEvents = 'auto';
+        
+        // Создаем простые контролы
+        this.createSimpleControls();
+        
+        // Биндим события
+        this.bindEvents();
+        
+        // Активируем этот слой
+        this.activate();
+    }
+
+    createSimpleControls() {
+        const controls = document.createElement('div');
+        controls.className = 'simple-controls';
+        controls.innerHTML = `
+            <button class="control-btn" data-action="scaleUp">➕</button>
+            <button class="control-btn" data-action="scaleDown">➖</button>
+            <button class="control-btn" data-action="rotateLeft">↶</button>
+            <button class="control-btn" data-action="rotateRight">↷</button>
+            <button class="control-btn" data-action="reset">🔄</button>
+        `;
+        
+        this.layerElement.appendChild(controls);
+
+        // Биндим события контролов
+        controls.querySelectorAll('.control-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                e.preventDefault();
-                
-                switch(index) {
-                    case 0: // Увеличить
-                        this.currentTransform.scale *= 1.2;
-                        break;
-                    case 1: // Уменьшить
-                        this.currentTransform.scale /= 1.2;
-                        break;
-                    case 2: // Повернуть влево
-                        this.currentTransform.rotation -= 15;
-                        break;
-                    case 3: // Повернуть вправо
-                        this.currentTransform.rotation += 15;
-                        break;
-                    case 4: // Сбросить
-                        this.currentTransform = {
-                            scale: 1.0,
-                            translateX: 0,
-                            translateY: 0,
-                            rotation: 0
-                        };
-                        break;
-                }
-                
-                this.applyTransform();
-                this.bringToFront();
+                const action = btn.dataset.action;
+                this[action]();
             });
         });
     }
@@ -257,501 +175,141 @@ class ClothingTransformer {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        // Мышиные события
-        image.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.startDrag(e.clientX, e.clientY);
-            this.bringToFront();
-        });
+        let isDragging = false;
+        let startX, startY;
 
-        image.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.bringToFront();
-        });
+        const startDrag = (clientX, clientY) => {
+            isDragging = true;
+            startX = clientX;
+            startY = clientY;
+            image.style.cursor = 'grabbing';
+            this.activate();
+        };
 
-        // Сенсорные события
-        image.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
-                this.bringToFront();
-            }
-        });
-
-        image.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-    }
-
-    startDrag(clientX, clientY) {
-        this.isDragging = true;
-        this.startX = clientX;
-        this.startY = clientY;
-        this.initialX = this.currentTransform.translateX;
-        this.initialY = this.currentTransform.translateY;
-
-        const image = this.layerElement.querySelector('.clothing-image');
-        if (image) image.style.cursor = 'grabbing';
-
-        const onMove = (moveX, moveY) => {
-            if (!this.isDragging) return;
+        const doDrag = (clientX, clientY) => {
+            if (!isDragging) return;
             
-            const dx = moveX - this.startX;
-            const dy = moveY - this.startY;
+            const dx = clientX - startX;
+            const dy = clientY - startY;
             
-            this.currentTransform.translateX = this.initialX + dx;
-            this.currentTransform.translateY = this.initialY + dy;
+            this.translateX += dx;
+            this.translateY += dy;
+            
+            startX = clientX;
+            startY = clientY;
             
             this.applyTransform();
         };
 
-        const onEnd = () => {
-            this.isDragging = false;
-            const image = this.layerElement.querySelector('.clothing-image');
-            if (image) image.style.cursor = 'grab';
-            
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onEnd);
-            document.removeEventListener('touchmove', onTouchMove);
-            document.removeEventListener('touchend', onEnd);
+        const endDrag = () => {
+            isDragging = false;
+            image.style.cursor = 'grab';
         };
 
-        const onMouseMove = (e) => onMove(e.clientX, e.clientY);
-        const onTouchMove = (e) => {
+        // Мышь
+        image.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            startDrag(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            doDrag(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', endDrag);
+
+        // Тач
+        image.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
             if (e.touches.length === 1) {
-                onMove(e.touches[0].clientX, e.touches[0].clientY);
+                startDrag(e.touches[0].clientX, e.touches[0].clientY);
             }
-        };
+        });
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchmove', onTouchMove, { passive: false });
-        document.addEventListener('touchend', onEnd);
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                doDrag(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        });
+
+        document.addEventListener('touchend', endDrag);
+
+        // Клик для активации
+        image.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.activate();
+        });
     }
 
-bringToFront() {
-    // Поднимаем текущий слой наверх
-    this.layerElement.style.zIndex = '100';
-    
-    // Опускаем все остальные слои
-    const allLayers = document.querySelectorAll('.clothing-layer');
-    allLayers.forEach(layer => {
-        if (layer !== this.layerElement) {
-            layer.style.zIndex = '10';
+    activate() {
+        // Поднимаем этот слой
+        this.layerElement.style.zIndex = '100';
+        
+        // Опускаем все остальные
+        document.querySelectorAll('.clothing-layer').forEach(layer => {
+            if (layer !== this.layerElement) {
+                layer.style.zIndex = '10';
+            }
+        });
+        
+        // Показываем контролы только у активного
+        document.querySelectorAll('.simple-controls').forEach(controls => {
+            controls.style.display = 'none';
+        });
+        
+        const myControls = this.layerElement.querySelector('.simple-controls');
+        if (myControls) {
+            myControls.style.display = 'flex';
         }
-    });
-    
-    // Показываем контролы только у активного слоя
-    const allControls = document.querySelectorAll('.transform-controls');
-    allControls.forEach(controls => {
-        controls.style.display = 'none';
-    });
-    
-    const myControls = this.layerElement.querySelector('.transform-controls');
-    if (myControls) {
-        myControls.style.display = 'flex';
     }
-}
 
     applyTransform() {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        // Ограничиваем значения
-        this.currentTransform.scale = Math.max(0.3, Math.min(3, this.currentTransform.scale));
-        this.currentTransform.translateX = Math.max(-150, Math.min(150, this.currentTransform.translateX));
-        this.currentTransform.translateY = Math.max(-150, Math.min(150, this.currentTransform.translateY));
+        // Ограничения
+        this.scale = Math.max(0.3, Math.min(3, this.scale));
+        this.translateX = Math.max(-100, Math.min(100, this.translateX));
+        this.translateY = Math.max(-100, Math.min(100, this.translateY));
 
-        const transform = `
-            translate(${this.currentTransform.translateX}px, ${this.currentTransform.translateY}px)
-            scale(${this.currentTransform.scale})
-            rotate(${this.currentTransform.rotation}deg)
+        image.style.transform = `
+            translate(${this.translateX}px, ${this.translateY}px)
+            scale(${this.scale})
+            rotate(${this.rotation}deg)
         `;
-
-        image.style.transform = transform;
     }
 
-    getTransform() {
-        return { ...this.currentTransform };
+    scaleUp() {
+        this.scale *= 1.2;
+        this.applyTransform();
     }
 
-    setTransform(transform) {
-        this.currentTransform = { ...transform };
+    scaleDown() {
+        this.scale /= 1.2;
+        this.applyTransform();
+    }
+
+    rotateLeft() {
+        this.rotation -= 15;
+        this.applyTransform();
+    }
+
+    rotateRight() {
+        this.rotation += 15;
+        this.applyTransform();
+    }
+
+    reset() {
+        this.scale = 1.0;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.rotation = 0;
         this.applyTransform();
     }
 
     destroy() {
-        const controls = this.layerElement.querySelector('.transform-controls');
+        const controls = this.layerElement.querySelector('.simple-controls');
         if (controls) controls.remove();
-    }
-}
-
-// Улучшенный Canvas процессор для удаления фона
-class AdvancedCanvasProcessor {
-    constructor() {
-        this.settings = {
-            bgDetectionSensitivity: 0.1,
-            colorTolerance: 55,
-            edgeDetectionThreshold: 30,
-            featherSize: 3,
-            minObjectSize: 100
-        };
-    }
-
-    // Основной метод удаления фона
-    async removeBackground(imageFile) {
-        return new Promise((resolve, reject) => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                try {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    
-                    ctx.drawImage(img, 0, 0);
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    
-                    this.intelligentBackgroundRemoval(imageData);
-                    this.featherEdges(imageData);
-                    this.removeSmallArtifacts(imageData);
-                    
-                    ctx.putImageData(imageData, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                } catch (error) {
-                    reject(error);
-                }
-            };
-
-            img.onerror = () => reject(new Error('Failed to load image'));
-            img.src = URL.createObjectURL(imageFile);
-        });
-    }
-
-    // Интеллектуальное удаление фона
-    intelligentBackgroundRemoval(imageData) {
-        const data = imageData.data;
-        const width = imageData.width;
-        const height = imageData.height;
-        
-        const bgColors = this.analyzeBackgroundColors(imageData);
-        const edgeMap = this.detectEdges(imageData);
-        const visited = new Set();
-        
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const index = (y * width + x) * 4;
-                
-                if (visited.has(`${x},${y}`)) continue;
-                
-                const pixel = [data[index], data[index + 1], data[index + 2]];
-                
-                const isBackground = 
-                    this.isBackgroundColor(pixel, bgColors) ||
-                    this.isEdgeBackground(x, y, edgeMap, width, height) ||
-                    this.isSmallIsland(x, y, imageData, visited);
-                
-                if (isBackground) {
-                    data[index + 3] = 0;
-                    visited.add(`${x},${y}`);
-                }
-            }
-        }
-    }
-
-    // Анализ цветов фона
-    analyzeBackgroundColors(imageData) {
-        const strategies = [
-            this.getCornerColors.bind(this),
-            this.getEdgeColors.bind(this),
-            this.getHistogramColors.bind(this)
-        ];
-        
-        const allBgColors = [];
-        
-        for (const strategy of strategies) {
-            const colors = strategy(imageData);
-            allBgColors.push(...colors);
-        }
-        
-        return this.averageColors(allBgColors);
-    }
-
-    // Анализ цветов в углах
-    getCornerColors(imageData) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const corners = [
-            [0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]
-        ];
-        
-        const cornerColors = [];
-        const sampleSize = 5;
-        
-        for (const [cx, cy] of corners) {
-            const samples = [];
-            for (let dy = -sampleSize; dy <= sampleSize; dy++) {
-                for (let dx = -sampleSize; dx <= sampleSize; dx++) {
-                    const x = cx + dx;
-                    const y = cy + dy;
-                    if (x >= 0 && x < width && y >= 0 && y < height) {
-                        const index = (y * width + x) * 4;
-                        samples.push([data[index], data[index + 1], data[index + 2]]);
-                    }
-                }
-            }
-            if (samples.length > 0) {
-                cornerColors.push(this.averageColors(samples));
-            }
-        }
-        
-        return cornerColors;
-    }
-
-    // Анализ цветов по краям
-    getEdgeColors(imageData) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const edgeSamples = [];
-        const sampleDensity = Math.max(2, Math.floor(width * 0.02));
-        
-        for (let x = 0; x < width; x += sampleDensity) {
-            let index = (0 * width + x) * 4;
-            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
-            
-            index = ((height - 1) * width + x) * 4;
-            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
-        }
-        
-        for (let y = 0; y < height; y += sampleDensity) {
-            let index = (y * width + 0) * 4;
-            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
-            
-            index = (y * width + (width - 1)) * 4;
-            edgeSamples.push([data[index], data[index + 1], data[index + 2]]);
-        }
-        
-        return [this.averageColors(edgeSamples)];
-    }
-
-    // Анализ гистограммы цветов
-    getHistogramColors(imageData) {
-        const data = imageData.data;
-        const colorCounts = new Map();
-        
-        for (let i = 0; i < data.length; i += 16) {
-            const r = data[i], g = data[i + 1], b = data[i + 2];
-            const quantized = this.quantizeColor(r, g, b);
-            const key = quantized.join(',');
-            colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
-        }
-        
-        const sortedColors = Array.from(colorCounts.entries())
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3);
-        
-        return sortedColors.map(([key]) => key.split(',').map(Number));
-    }
-
-    quantizeColor(r, g, b, bins = 16) {
-        return [
-            Math.floor(r / bins) * bins,
-            Math.floor(g / bins) * bins,
-            Math.floor(b / bins) * bins
-        ];
-    }
-
-    averageColors(colors) {
-        if (colors.length === 0) return [255, 255, 255];
-        
-        const total = colors.reduce((acc, color) => {
-            return [acc[0] + color[0], acc[1] + color[1], acc[2] + color[2]];
-        }, [0, 0, 0]);
-        
-        return [
-            Math.round(total[0] / colors.length),
-            Math.round(total[1] / colors.length),
-            Math.round(total[2] / colors.length)
-        ];
-    }
-
-    isBackgroundColor(pixel, bgColors) {
-        for (const bgColor of bgColors) {
-            const distance = this.colorDistance(pixel, bgColor);
-            if (distance < this.settings.colorTolerance) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    colorDistance(color1, color2) {
-        return Math.sqrt(
-            Math.pow(color1[0] - color2[0], 2) +
-            Math.pow(color1[1] - color2[1], 2) +
-            Math.pow(color1[2] - color2[2], 2)
-        );
-    }
-
-    // Обнаружение краев (алгоритм Собеля)
-    detectEdges(imageData) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const edgeMap = new Array(width * height).fill(0);
-        
-        const kernelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
-        const kernelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
-        
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-                let gx = 0, gy = 0;
-                
-                for (let ky = -1; ky <= 1; ky++) {
-                    for (let kx = -1; kx <= 1; kx++) {
-                        const pixelIndex = ((y + ky) * width + (x + kx)) * 4;
-                        const luminance = this.getLuminance(
-                            data[pixelIndex],
-                            data[pixelIndex + 1],
-                            data[pixelIndex + 2]
-                        );
-                        
-                        gx += luminance * kernelX[ky + 1][kx + 1];
-                        gy += luminance * kernelY[ky + 1][kx + 1];
-                    }
-                }
-                
-                const gradient = Math.sqrt(gx * gx + gy * gy);
-                edgeMap[y * width + x] = gradient > this.settings.edgeDetectionThreshold ? 1 : 0;
-            }
-        }
-        
-        return edgeMap;
-    }
-
-    getLuminance(r, g, b) {
-        return 0.299 * r + 0.587 * g + 0.114 * b;
-    }
-
-    isEdgeBackground(x, y, edgeMap, width, height) {
-        const index = y * width + x;
-        return edgeMap[index] === 0 && this.isNearEdge(x, y, width, height);
-    }
-
-    isNearEdge(x, y, width, height) {
-        const margin = Math.min(width, height) * this.settings.bgDetectionSensitivity;
-        return x < margin || x > width - margin || y < margin || y > height - margin;
-    }
-
-    // Обнаружение маленьких островков
-    isSmallIsland(startX, startY, imageData, visited) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const queue = [[startX, startY]];
-        const islandPixels = [];
-        
-        while (queue.length > 0) {
-            const [x, y] = queue.shift();
-            const key = `${x},${y}`;
-            
-            if (visited.has(key)) continue;
-            visited.add(key);
-            
-            if (x < 0 || x >= width || y < 0 || y >= height) continue;
-            
-            const index = (y * width + x) * 4;
-            if (data[index + 3] === 0) continue;
-            
-            islandPixels.push([x, y]);
-            
-            if (islandPixels.length < this.settings.minObjectSize * 2) {
-                queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-            }
-        }
-        
-        return islandPixels.length < this.settings.minObjectSize;
-    }
-
-    // Сглаживание краев
-    featherEdges(imageData) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const featherSize = this.settings.featherSize;
-        
-        for (let y = featherSize; y < height - featherSize; y++) {
-            for (let x = featherSize; x < width - featherSize; x++) {
-                const index = (y * width + x) * 4;
-                const currentAlpha = data[index + 3];
-                
-                if (currentAlpha > 0 && currentAlpha < 255) {
-                    let alphaSum = 0;
-                    let count = 0;
-                    
-                    for (let dy = -featherSize; dy <= featherSize; dy++) {
-                        for (let dx = -featherSize; dx <= featherSize; dx++) {
-                            const neighborIndex = ((y + dy) * width + (x + dx)) * 4;
-                            alphaSum += data[neighborIndex + 3];
-                            count++;
-                        }
-                    }
-                    
-                    const averageAlpha = alphaSum / count;
-                    data[index + 3] = Math.round(averageAlpha);
-                }
-            }
-        }
-    }
-
-    // Удаление мелких артефактов
-    removeSmallArtifacts(imageData) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-                const index = (y * width + x) * 4;
-                
-                if (data[index + 3] === 0) continue;
-                
-                const transparentNeighbors = this.countTransparentNeighbors(x, y, imageData);
-                
-                if (transparentNeighbors >= 6) {
-                    data[index + 3] = 0;
-                }
-            }
-        }
-    }
-
-    countTransparentNeighbors(x, y, imageData) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        let count = 0;
-        
-        for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-                if (dx === 0 && dy === 0) continue;
-                
-                const nx = x + dx, ny = y + dy;
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    const neighborIndex = (ny * width + nx) * 4;
-                    if (data[neighborIndex + 3] === 0) {
-                        count++;
-                    }
-                }
-            }
-        }
-        
-        return count;
     }
 }
 
@@ -782,67 +340,6 @@ const Storage = {
         } catch (error) {
             console.error('Error saving products:', error);
         }
-    },
-
-    addProduct(product) {
-        const products = this.getProducts();
-        const maxId = products.length > 0 ? Math.max(...products.map(p => p.id)) : 0;
-        product.id = maxId + 1;
-        product.createdAt = new Date().toISOString();
-        
-        products.push(product);
-        this.saveProducts(products);
-        return product;
-    },
-
-    updateProduct(productId, updates) {
-        const products = this.getProducts();
-        const index = products.findIndex(p => p.id === productId);
-        if (index !== -1) {
-            products[index] = { ...products[index], ...updates };
-            this.saveProducts(products);
-            return true;
-        }
-        return false;
-    },
-
-    deleteProduct(productId) {
-        const products = this.getProducts();
-        const filtered = products.filter(p => p.id !== productId);
-        this.saveProducts(filtered);
-        return filtered;
-    },
-
-    getOrders() {
-        try {
-            const stored = localStorage.getItem(this.KEYS.ORDERS);
-            return stored ? JSON.parse(stored) : [];
-        } catch (error) {
-            console.error('Error loading orders:', error);
-            return [];
-        }
-    },
-
-    saveOrder(order) {
-        const orders = this.getOrders();
-        order.id = orders.length + 1;
-        order.createdAt = new Date().toISOString();
-        order.status = 'new';
-        orders.push(order);
-        localStorage.setItem(this.KEYS.ORDERS, JSON.stringify(orders));
-        return order;
-    },
-
-    updateOrderStatus(orderId, status) {
-        const orders = this.getOrders();
-        const order = orders.find(o => o.id === orderId);
-        if (order) {
-            order.status = status;
-            order.updatedAt = new Date().toISOString();
-            localStorage.setItem(this.KEYS.ORDERS, JSON.stringify(orders));
-            return true;
-        }
-        return false;
     },
 
     getCart() {
@@ -881,22 +378,24 @@ const Storage = {
         }
     },
 
-    getSettings() {
+    getOrders() {
         try {
-            const stored = localStorage.getItem(this.KEYS.SETTINGS);
-            return stored ? JSON.parse(stored) : {};
+            const stored = localStorage.getItem(this.KEYS.ORDERS);
+            return stored ? JSON.parse(stored) : [];
         } catch (error) {
-            console.error('Error loading settings:', error);
-            return {};
+            console.error('Error loading orders:', error);
+            return [];
         }
     },
 
-    saveSettings(settings) {
-        try {
-            localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(settings));
-        } catch (error) {
-            console.error('Error saving settings:', error);
-        }
+    saveOrder(order) {
+        const orders = this.getOrders();
+        order.id = orders.length + 1;
+        order.createdAt = new Date().toISOString();
+        order.status = 'new';
+        orders.push(order);
+        localStorage.setItem(this.KEYS.ORDERS, JSON.stringify(orders));
+        return order;
     },
 
     getOutfits() {
@@ -937,7 +436,6 @@ class FashionApp {
             }
         };
 
-        this.imageProcessor = new AdvancedCanvasProcessor();
         this.clothingTransformers = {};
         this.init();
     }
@@ -949,8 +447,6 @@ class FashionApp {
             await this.loadData();
             this.initUI();
             this.bindEvents();
-            this.initImageUpload();
-            this.bindGlobalEvents();
             this.hideLoading();
             console.log('FashionApp initialized successfully');
         } catch (error) {
@@ -966,46 +462,18 @@ class FashionApp {
             this.tg.expand();
             this.tg.enableClosingConfirmation();
             this.tg.ready();
-            
-            this.setTelegramTheme();
         } else {
             console.log('Running in standalone browser');
             this.tg = {
                 showAlert: (msg) => alert(msg),
-                MainButton: { 
-                    setText: () => {}, 
-                    onClick: () => {}, 
-                    show: () => {},
-                    hide: () => {},
-                    setParams: () => {}
-                },
                 initDataUnsafe: { 
                     user: { 
                         id: Math.floor(Math.random() * 1000000000), 
-                        first_name: 'Пользователь',
-                        last_name: 'Тестовый',
-                        username: 'testuser'
+                        first_name: 'Пользователь'
                     } 
-                },
-                sendData: (data) => console.log('Data sent:', data),
-                expand: () => console.log('Expanded'),
-                enableClosingConfirmation: () => console.log('Closing confirmation enabled'),
-                ready: () => console.log('Ready'),
-                platform: 'unknown',
-                colorScheme: 'light',
-                viewportHeight: window.innerHeight,
-                viewportStableHeight: window.innerHeight
+                }
             };
-            
         }
-    }
-
-    setTelegramTheme() {
-        if (!this.tg || !this.tg.colorScheme) return;
-        
-        const isDark = this.tg.colorScheme === 'dark';
-        document.body.style.backgroundColor = isDark ? '#1a1a1a' : '#ffffff';
-        document.body.style.color = isDark ? '#ffffff' : '#1f2937';
     }
 
     async loadData() {
@@ -1017,7 +485,7 @@ class FashionApp {
                     this.state.cart = Storage.getCart();
                     this.state.favorites = Storage.getFavorites();
                     this.updateCategoryCounts();
-                    console.log('Data loaded successfully:', this.state.products.length, 'products');
+                    console.log('Data loaded successfully');
                     resolve();
                 } catch (error) {
                     console.error('Error loading data:', error);
@@ -1034,19 +502,6 @@ class FashionApp {
     initUI() {
         this.renderProducts();
         this.updateCartBadge();
-        this.setupMainButton();
-        this.fixViewportHeight();
-    }
-
-    fixViewportHeight() {
-        const setVH = () => {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        };
-        
-        setVH();
-        window.addEventListener('resize', setVH);
-        window.addEventListener('orientationchange', setVH);
     }
 
     bindEvents() {
@@ -1097,14 +552,12 @@ class FashionApp {
         const fittingBackToSelection = document.getElementById('fittingBackToSelection');
         const fittingReset = document.getElementById('fittingReset');
         const saveOutfit = document.getElementById('saveOutfit');
-        const shareOutfit = document.getElementById('shareOutfit');
         
         if (fittingBack) fittingBack.addEventListener('click', () => this.closeFittingRoom());
         if (fittingProceed) fittingProceed.addEventListener('click', () => this.showFittingView());
         if (fittingBackToSelection) fittingBackToSelection.addEventListener('click', () => this.showFittingSelection());
         if (fittingReset) fittingReset.addEventListener('click', () => this.resetFitting());
         if (saveOutfit) saveOutfit.addEventListener('click', () => this.saveOutfit());
-        if (shareOutfit) shareOutfit.addEventListener('click', () => this.shareOutfit());
 
         // Табы в примерочной
         document.querySelectorAll('.tab-btn').forEach(tab => {
@@ -1123,176 +576,9 @@ class FashionApp {
         // Админка
         const adminBtn = document.getElementById('adminBtn');
         const adminBack = document.getElementById('adminBack');
-        const productForm = document.getElementById('productForm');
-        const removeImageBtn = document.getElementById('removeImageBtn');
-        const removeModelImageBtn = document.getElementById('removeModelImageBtn');
         
         if (adminBtn) adminBtn.addEventListener('click', () => this.showAdminPanel());
         if (adminBack) adminBack.addEventListener('click', () => this.hideAdminPanel());
-        if (productForm) productForm.addEventListener('submit', (e) => this.addNewProduct(e));
-        if (removeImageBtn) removeImageBtn.addEventListener('click', () => this.removeImage());
-        if (removeModelImageBtn) removeModelImageBtn.addEventListener('click', () => this.removeModelImage());
-        
-        // Табы админки
-        document.querySelectorAll('.admin-tab-btn').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                this.switchAdminTab(e.target.dataset.tab);
-            });
-        });
-
-        // Предотвращение zoom на мобильных устройствах
-        document.addEventListener('touchstart', this.handleTouchStart, { passive: false });
-        document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
-        document.addEventListener('click', (e) => {
-        const clothingLayer = e.target.closest('.clothing-layer');
-        if (clothingLayer) {
-            const layerType = clothingLayer.dataset.layerType;
-            if (layerType && this.clothingTransformers[layerType]) {
-                this.clothingTransformers[layerType].activateLayer();
-            }
-        }
-    });
-        
-    }
-
-    bindGlobalEvents() {
-    // Глобальный обработчик для активации слоев по клику
-    document.addEventListener('click', (e) => {
-        const clothingImage = e.target.closest('.clothing-image');
-        if (clothingImage) {
-            const layer = clothingImage.closest('.clothing-layer');
-            if (layer) {
-                const layerType = layer.dataset.layerType;
-                if (layerType && this.clothingTransformers[layerType]) {
-                    this.clothingTransformers[layerType].bringToFront();
-                }
-            }
-        }
-        
-        // Также активируем при клике на контролы
-        const controlBtn = e.target.closest('.control-btn');
-        if (controlBtn) {
-            const layer = controlBtn.closest('.clothing-layer');
-            if (layer) {
-                const layerType = layer.dataset.layerType;
-                if (layerType && this.clothingTransformers[layerType]) {
-                    this.clothingTransformers[layerType].bringToFront();
-                }
-            }
-        }
-    });
-}
-
-    handleTouchStart(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }
-
-    handleTouchMove(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }
-
-    // Загрузка изображений
-    initImageUpload() {
-        this.setupImageUpload('productImageFile', 'uploadArea', 'imagePreview', 'previewImage');
-        this.setupImageUpload('productModelImageFile', 'uploadModelArea', 'modelImagePreview', 'previewModelImage');
-    }
-
-    setupImageUpload(inputId, areaId, previewId, previewImageId) {
-        const fileInput = document.getElementById(inputId);
-        const uploadArea = document.getElementById(areaId);
-        const preview = document.getElementById(previewId);
-        const previewImage = document.getElementById(previewImageId);
-
-        if (!fileInput || !uploadArea) return;
-
-        uploadArea.addEventListener('click', () => fileInput.click());
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.handleImageSelect(files[0], preview, previewImage, uploadArea);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleImageSelect(e.target.files[0], preview, previewImage, uploadArea);
-            }
-        });
-    }
-
-    handleImageSelect(file, preview, previewImage, uploadArea) {
-        if (!file.type.startsWith('image/')) {
-            this.showAlert('Пожалуйста, выберите изображение');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewImage.src = e.target.result;
-            preview.classList.remove('hidden');
-            uploadArea.classList.add('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-
-    removeImage() {
-        document.getElementById('productImageFile').value = '';
-        document.getElementById('imagePreview').classList.add('hidden');
-        document.getElementById('uploadArea').classList.remove('hidden');
-    }
-
-    removeModelImage() {
-        document.getElementById('productModelImageFile').value = '';
-        document.getElementById('modelImagePreview').classList.add('hidden');
-        document.getElementById('uploadModelArea').classList.remove('hidden');
-    }
-
-    // Обработка изображений с улучшенным алгоритмом
-    async processProductImages(mainImageFile, modelImageFile = null) {
-        try {
-            const [mainProcessed, modelProcessed] = await Promise.all([
-                this.readFileAsDataURL(mainImageFile),
-                modelImageFile ? this.imageProcessor.removeBackground(modelImageFile) : null
-            ]);
-
-            return {
-                main: mainProcessed,
-                model: modelProcessed || mainProcessed
-            };
-        } catch (error) {
-            console.error('Image processing failed:', error);
-            // Fallback на оригинальные изображения
-            const mainFallback = await this.readFileAsDataURL(mainImageFile);
-            return {
-                main: mainFallback,
-                model: mainFallback
-            };
-        }
-    }
-
-    readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(e);
-            reader.readAsDataURL(file);
-        });
     }
 
     // Рендер товаров
@@ -1314,8 +600,7 @@ class FashionApp {
         grid.innerHTML = this.state.filteredProducts.map(product => `
             <div class="product-card fade-in" onclick="app.openProductModal(${product.id})">
                 <div class="product-image-container">
-                    <img src="${product.images[0]}" alt="${product.name}" class="product-image" 
-                         onerror="this.src='https://placehold.co/400x300/64748b/ffffff?text=Image+Error'">
+                    <img src="${product.images[0]}" alt="${product.name}" class="product-image">
                     <div class="product-badges">
                         ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
                         ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
@@ -1351,14 +636,13 @@ class FashionApp {
         if (!modalBody) return;
 
         modalBody.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
                 <div>
-                    <img src="${product.images[0]}" alt="${product.name}" 
-                         style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <img src="${product.images[0]}" alt="${product.name}" style="width: 100%; border-radius: 12px;">
                 </div>
                 <div>
-                    <h2 style="margin-bottom: 12px; color: var(--text);">${product.name}</h2>
-                    <p style="color: var(--text-light); margin-bottom: 20px; line-height: 1.5;">${product.description}</p>
+                    <h2 style="margin-bottom: 12px;">${product.name}</h2>
+                    <p style="color: var(--text-light); margin-bottom: 20px;">${product.description}</p>
                     
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
                         <span style="font-size: 24px; font-weight: 700; color: var(--primary);">
@@ -1375,19 +659,8 @@ class FashionApp {
                         <div style="font-weight: 600; margin-bottom: 8px;">Размеры:</div>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             ${product.sizes.map(size => `
-                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px; font-size: 14px;">
+                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px;">
                                     ${size}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 25px;">
-                        <div style="font-weight: 600; margin-bottom: 8px;">Цвета:</div>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            ${product.colors.map(color => `
-                                <span style="padding: 6px 12px; background: var(--surface-light); border-radius: 8px; font-size: 14px;">
-                                    ${color}
                                 </span>
                             `).join('')}
                         </div>
@@ -1395,18 +668,11 @@ class FashionApp {
 
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button onclick="app.addToCart(${product.id}); app.closeModal()" 
-                                style="padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; 
-                                       font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
-                                onmouseover="this.style.background='var(--primary-dark)'" 
-                                onmouseout="this.style.background='var(--primary)'">
+                                style="padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; cursor: pointer;">
                             Добавить в корзину
                         </button>
                         <button onclick="app.openFittingRoom(${product.id})" 
-                                style="padding: 15px; background: var(--surface); color: var(--primary); border: 2px solid var(--primary); 
-                                       border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
-                                       transition: all 0.2s ease;"
-                                onmouseover="this.style.background='var(--primary)'; this.style.color='white'" 
-                                onmouseout="this.style.background='var(--surface)'; this.style.color='var(--primary)'">
+                                style="padding: 15px; background: var(--surface); color: var(--primary); border: 2px solid var(--primary); border-radius: 12px; font-size: 16px; cursor: pointer;">
                             👗 2D Примерка
                         </button>
                     </div>
@@ -1425,8 +691,6 @@ class FashionApp {
         const cartItem = {
             id: Date.now(),
             product: product,
-            size: product.sizes[0],
-            color: product.colors[0],
             quantity: 1
         };
 
@@ -1459,7 +723,6 @@ class FashionApp {
                 <div class="empty-cart">
                     <div class="empty-icon">🛒</div>
                     <h3>Корзина пуста</h3>
-                    <p>Добавьте товары из каталога</p>
                 </div>
             `;
             return;
@@ -1467,14 +730,9 @@ class FashionApp {
 
         container.innerHTML = this.state.cart.map(item => `
             <div class="cart-item">
-                <img src="${item.product.images[0]}" alt="${item.product.name}" class="cart-item-image"
-                     onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=Image+Error'">
+                <img src="${item.product.images[0]}" alt="${item.product.name}" class="cart-item-image">
                 <div class="cart-item-details">
                     <h4 class="cart-item-title">${item.product.name}</h4>
-                    <div class="cart-item-options">
-                        <span class="cart-item-size">Размер: ${item.size}</span>
-                        <span class="cart-item-color">Цвет: ${item.color}</span>
-                    </div>
                     <div class="cart-item-price">${(item.product.price * item.quantity).toLocaleString()} ₽</div>
                 </div>
                 <div class="cart-item-controls">
@@ -1570,7 +828,7 @@ class FashionApp {
 
     showProfile() {
         const user = this.tg.initDataUnsafe.user;
-        this.showAlert(`👤 Профиль:\nИмя: ${user?.first_name || 'Неизвестно'}\n❤️ Избранных: ${this.state.favorites.length}\n🛒 В корзине: ${this.state.cart.length}`);
+        this.showAlert(`👤 Профиль:\nИмя: ${user?.first_name || 'Неизвестно'}`);
     }
 
     toggleFavorite(productId) {
@@ -1632,10 +890,7 @@ class FashionApp {
     // Добавление товара в примерку
     addToFitting(productId) {
         const product = this.state.products.find(p => p.id === productId);
-        if (!product || !product.fitting) {
-            console.error('Product not found:', productId);
-            return;
-        }
+        if (!product || !product.fitting) return;
 
         const category = product.fitting.type;
         
@@ -1666,11 +921,6 @@ class FashionApp {
         this.state.currentOutfit[category] = null;
         this.renderSelectedItems();
         this.updateProceedButton();
-        
-        const activeTab = document.querySelector('.tab-btn.active');
-        if (activeTab) {
-            this.renderFittingProducts(activeTab.dataset.category);
-        }
     }
 
     renderSelectedItems() {
@@ -1688,8 +938,7 @@ class FashionApp {
 
         container.innerHTML = selectedItems.map(({ category, product }) => `
             <div class="selected-item">
-                <img src="${product.images[0]}" alt="${product.name}" 
-                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=IMG'">
+                <img src="${product.images[0]}" alt="${product.name}">
                 <span>${this.getCategoryName(category)}: ${product.name}</span>
                 <button class="remove-item" onclick="app.removeFromFitting('${category}')">✕</button>
             </div>
@@ -1711,8 +960,7 @@ class FashionApp {
 
         container.innerHTML = outfitItems.map(({ category, product }) => `
             <div class="outfit-item">
-                <img src="${product.images[0]}" alt="${product.name}" 
-                     onerror="this.src='https://placehold.co/60x60/64748b/ffffff?text=IMG'">
+                <img src="${product.images[0]}" alt="${product.name}">
                 <div class="outfit-item-info">
                     <div class="outfit-item-name">${product.name}</div>
                     <div class="outfit-item-category">${this.getCategoryName(category)}</div>
@@ -1727,146 +975,53 @@ class FashionApp {
 
         const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
         proceedButton.disabled = !hasItems;
-        
-        if (hasItems) {
-            proceedButton.style.opacity = '1';
-            proceedButton.style.cursor = 'pointer';
-        } else {
-            proceedButton.style.opacity = '0.5';
-            proceedButton.style.cursor = 'not-allowed';
-        }
     }
 
     // Обновление отображения модели с трансформациями
-// Обновление отображения модели с трансформациями
-// Обновление отображения модели с трансформациями
-updateModelView() {
-    const modelBase = document.getElementById('modelBase');
-    const clothingLayers = document.getElementById('clothingLayers');
-    
-    if (!modelBase || !clothingLayers) return;
-
-    const baseImage = MODEL_BASES[this.state.currentModel];
-    
-    modelBase.innerHTML = `
-        <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
-             class="model-base-image"
-             style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-lg);"
-             onerror="this.handleModelImageError(this)">
-    `;
-
-    clothingLayers.innerHTML = '';
-
-    const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
-    
-    // Уничтожаем старые трансформаторы
-    Object.values(this.clothingTransformers || {}).forEach(transformer => {
-        if (transformer && typeof transformer.destroy === 'function') {
-            transformer.destroy();
-        }
-    });
-    
-    this.clothingTransformers = {};
-    
-    layersOrder.forEach(layerType => {
-        const product = this.state.currentOutfit[layerType];
-        if (product) {
-            const layer = document.createElement('div');
-            layer.className = `clothing-layer ${layerType}-layer`;
-            layer.dataset.layerType = layerType;
-            
-            const modelImage = this.getModelImage(product, layerType);
-            
-            layer.innerHTML = `
-                <img src="${modelImage}" 
-                     alt="${product.name}" 
-                     class="clothing-image ${layerType}-image"
-                     onerror="app.handleClothingImageError(this, '${layerType}')">
-            `;
-            clothingLayers.appendChild(layer);
-
-            // Сразу создаем трансформатор
-            this.clothingTransformers[layerType] = new ClothingTransformer(layer, layerType);
-        }
-    });
-}
-
-    // Обработка ошибок загрузки модели
-    handleModelImageError(imgElement) {
-        console.log('Model image failed to load, using placeholder');
-        const isFemale = this.state.currentModel === 'female';
-        imgElement.src = isFemale 
-            ? 'https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель'
-            : 'https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель';
-        imgElement.onerror = null;
-    }
-
-    // Обработка ошибок загрузки одежды
-    handleClothingImageError(imgElement, layerType) {
-        console.log('Clothing image failed to load, using placeholder');
-        const color = this.getCategoryColor(layerType);
-        const text = this.getCategoryText(layerType);
-        const dimensions = this.getImageDimensions(layerType);
+    updateModelView() {
+        const modelBase = document.getElementById('modelBase');
+        const clothingLayers = document.getElementById('clothingLayers');
         
-        imgElement.src = `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        imgElement.onerror = null;
-    }
+        if (!modelBase || !clothingLayers) return;
 
-    // Автоматическая адаптация изображений для примерочной
-    getModelImage(product, layerType) {
-        if (product.modelImages && product.modelImages[this.state.currentModel]) {
-            return product.modelImages[this.state.currentModel];
-        }
+        // Уничтожаем старые трансформаторы
+        Object.values(this.clothingTransformers || {}).forEach(transformer => {
+            if (transformer && typeof transformer.destroy === 'function') {
+                transformer.destroy();
+            }
+        });
+
+        const baseImage = MODEL_BASES[this.state.currentModel];
         
-        return this.adaptImageForFitting(product.images[0], layerType);
-    }
+        modelBase.innerHTML = `
+            <img src="${baseImage}" alt="Модель" class="model-base-image">
+        `;
 
-    // Адаптация обычного фото товара для примерочной
-    adaptImageForFitting(imageUrl, layerType) {
-        if (layerType === 'dresses') {
-            return imageUrl;
-        }
+        clothingLayers.innerHTML = '';
+
+        const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
+        this.clothingTransformers = {};
         
-        const baseUrl = imageUrl.split('?')[0];
-        const dimensions = this.getImageDimensions(layerType);
-        
-        if (imageUrl.includes('placehold.co')) {
-            const color = this.getCategoryColor(layerType);
-            const text = this.getCategoryText(layerType);
-            return `https://placehold.co/${dimensions}/${color}/ffffff?text=${text}`;
-        }
-        
-        return imageUrl;
-    }
+        layersOrder.forEach(layerType => {
+            const product = this.state.currentOutfit[layerType];
+            if (product) {
+                const layer = document.createElement('div');
+                layer.className = `clothing-layer ${layerType}-layer`;
+                layer.dataset.layerType = layerType;
+                
+                const modelImage = product.modelImages?.[this.state.currentModel] || product.images[0];
+                
+                layer.innerHTML = `
+                    <img src="${modelImage}" 
+                         alt="${product.name}" 
+                         class="clothing-image ${layerType}-image">
+                `;
+                clothingLayers.appendChild(layer);
 
-    getImageDimensions(layerType) {
-        const dimensions = {
-            'tops': '250x300',
-            'bottoms': '250x200', 
-            'dresses': '300x500',
-            'shoes': '200x150'
-        };
-        return dimensions[layerType] || '300x300';
-    }
-
-    getCategoryColor(layerType) {
-        const colors = {
-            'tops': '8b5cf6',
-            'bottoms': '06b6d4',
-            'dresses': 'ec4899',
-            'shoes': 'f59e0b'
-        };
-        return colors[layerType] || '64748b';
-    }
-
-    getCategoryText(layerType) {
-        const texts = {
-            'tops': 'Футболка+на+модели',
-            'bottoms': 'Штаны+на+модели',
-            'dresses': 'Платье+на+модели',
-            'shoes': 'Обувь+на+модели'
-        };
-        return texts[layerType] || 'Одежда+на+модели';
+                // Создаем трансформатор
+                this.clothingTransformers[layerType] = new ClothingTransformer(layer, layerType);
+            }
+        });
     }
 
     // Смена модели
@@ -1902,7 +1057,6 @@ updateModelView() {
                 <div class="fitting-empty">
                     <div class="empty-icon">👗</div>
                     <h3>Нет товаров для примерки</h3>
-                    <p>Добавьте товары в эту категорию</p>
                 </div>
             `;
             return;
@@ -1913,8 +1067,7 @@ updateModelView() {
             return `
                 <div class="fitting-product ${isSelected ? 'selected' : ''}" 
                      onclick="app.addToFitting(${product.id})">
-                    <img src="${product.images[0]}" alt="${product.name}" 
-                         onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=IMG'">
+                    <img src="${product.images[0]}" alt="${product.name}">
                     <div class="product-title">${product.name}</div>
                     <div class="product-price">${product.price.toLocaleString()} ₽</div>
                 </div>
@@ -1923,30 +1076,30 @@ updateModelView() {
     }
 
     // Сброс примерки
-resetFitting() {
-    this.state.currentOutfit = {
-        tops: null,
-        bottoms: null,
-        dresses: null,
-        shoes: null
-    };
-    
-    // Уничтожаем все трансформаторы
-    Object.values(this.clothingTransformers || {}).forEach(transformer => {
-        if (transformer && typeof transformer.destroy === 'function') {
-            transformer.destroy();
-        }
-    });
-    
-    this.clothingTransformers = {};
-    
-    this.renderSelectedItems();
-    this.renderOutfitItems();
-    this.updateProceedButton();
-    this.updateModelView();
-    
-    this.showAlert('Примерка сброшена');
-}
+    resetFitting() {
+        this.state.currentOutfit = {
+            tops: null,
+            bottoms: null,
+            dresses: null,
+            shoes: null
+        };
+        
+        // Уничтожаем все трансформаторы
+        Object.values(this.clothingTransformers || {}).forEach(transformer => {
+            if (transformer && typeof transformer.destroy === 'function') {
+                transformer.destroy();
+            }
+        });
+        
+        this.clothingTransformers = {};
+        
+        this.renderSelectedItems();
+        this.renderOutfitItems();
+        this.updateProceedButton();
+        this.updateModelView();
+        
+        this.showAlert('Примерка сброшена');
+    }
 
     // Сохранение образа с трансформациями
     saveOutfit() {
@@ -1961,7 +1114,12 @@ resetFitting() {
         const transformations = {};
         Object.keys(this.clothingTransformers || {}).forEach(layerType => {
             if (this.clothingTransformers[layerType] && this.state.currentOutfit[layerType]) {
-                transformations[layerType] = this.clothingTransformers[layerType].getTransform();
+                transformations[layerType] = {
+                    scale: this.clothingTransformers[layerType].scale,
+                    translateX: this.clothingTransformers[layerType].translateX,
+                    translateY: this.clothingTransformers[layerType].translateY,
+                    rotation: this.clothingTransformers[layerType].rotation
+                };
             }
         });
 
@@ -1977,42 +1135,7 @@ resetFitting() {
         savedOutfits.push(newOutfit);
         Storage.saveOutfits(savedOutfits);
         
-        this.showAlert('Образ сохранен с трансформациями!');
-    }
-
-    // Загрузка сохраненного образа
-    loadSavedOutfit(outfitId) {
-        const savedOutfits = Storage.getOutfits();
-        const outfit = savedOutfits.find(o => o.id === outfitId);
-        
-        if (outfit) {
-            this.state.currentOutfit = { ...outfit.outfit };
-            this.state.currentModel = outfit.model;
-            
-            // Восстанавливаем трансформации
-            this.updateModelView();
-            setTimeout(() => {
-                Object.keys(outfit.transformations || {}).forEach(layerType => {
-                    if (this.clothingTransformers[layerType] && outfit.transformations[layerType]) {
-                        this.clothingTransformers[layerType].setTransform(outfit.transformations[layerType]);
-                    }
-                });
-            }, 200);
-            
-            this.showAlert('Образ загружен!');
-        }
-    }
-
-    // Поделиться образом
-    shareOutfit() {
-        const hasItems = Object.values(this.state.currentOutfit).some(item => item !== null);
-        
-        if (!hasItems) {
-            this.showAlert('Добавьте товары для создания образа');
-            return;
-        }
-
-        this.showAlert('Функция "Поделиться" скоро будет доступна!');
+        this.showAlert('Образ сохранен!');
     }
 
     handleFittingTabChange(category) {
@@ -2022,189 +1145,10 @@ resetFitting() {
     // Админка
     showAdminPanel() {
         this.showPanel('adminPanel');
-        this.loadAdminProducts();
-        this.loadOrders();
     }
 
     hideAdminPanel() {
         this.hidePanel('adminPanel');
-    }
-
-    switchAdminTab(tabName) {
-        document.querySelectorAll('.admin-tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-        
-        const tabContent = document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
-        const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
-        
-        if (tabContent) tabContent.classList.add('active');
-        if (tabButton) tabButton.classList.add('active');
-    }
-
-    loadAdminProducts() {
-        const container = document.getElementById('adminProductsList');
-        if (!container) return;
-
-        const products = Storage.getProducts();
-
-        if (products.length === 0) {
-            container.innerHTML = `
-                <div class="empty-admin">
-                    <p>Нет товаров</p>
-                    <button class="btn btn-primary" onclick="app.switchAdminTab('add')" style="margin-top: 15px;">
-                        Добавить первый товар
-                    </button>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = products.map(product => `
-            <div class="admin-product-item">
-                <img src="${product.images[0]}" alt="${product.name}" class="admin-product-image"
-                     onerror="this.src='https://placehold.co/150x150/64748b/ffffff?text=Image+Error'">
-                <div class="admin-product-info">
-                    <h4>${product.name}</h4>
-                    <div class="admin-product-price">${product.price.toLocaleString()} ₽</div>
-                    <div class="admin-product-category">${this.getCategoryName(product.category)}</div>
-                    <div class="admin-product-badges">
-                        ${product.isNew ? '<span class="badge new">NEW</span>' : ''}
-                        ${product.isSale ? '<span class="badge sale">SALE</span>' : ''}
-                        ${product.isHot ? '<span class="badge hot">HOT</span>' : ''}
-                    </div>
-                </div>
-                <div class="admin-product-actions">
-                    <button class="admin-btn admin-btn-delete" onclick="app.deleteProduct(${product.id})">
-                        Удалить
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    loadOrders() {
-        const container = document.getElementById('adminOrdersList');
-        if (!container) return;
-
-        const orders = Storage.getOrders();
-
-        if (orders.length === 0) {
-            container.innerHTML = `
-                <div class="empty-admin">
-                    <p>Нет заказов</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = orders.map(order => `
-            <div class="admin-product-item">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                    <h4>Заказ #${order.id}</h4>
-                    <span style="padding: 4px 12px; background: #fef3c7; color: #92400e; border-radius: 20px; font-size: 12px; font-weight: 600;">
-                        Новый
-                    </span>
-                </div>
-                <div style="color: var(--text-light); margin-bottom: 10px;">
-                    <div>Сумма: <strong style="color: var(--primary);">${order.total.toLocaleString()} ₽</strong></div>
-                    <div>Товаров: ${order.items.length} шт.</div>
-                    <div>Дата: ${new Date(order.createdAt).toLocaleDateString()}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    addNewProduct(e) {
-        e.preventDefault();
-        
-        const mainImageFile = document.getElementById('productImageFile')?.files[0];
-        const modelImageFile = document.getElementById('productModelImageFile')?.files[0];
-
-        if (!mainImageFile) {
-            this.showAlert('Пожалуйста, выберите основное изображение товара');
-            return;
-        }
-
-        // Показываем индикатор обработки
-        this.showProcessingIndicator();
-
-        this.processProductImages(mainImageFile, modelImageFile)
-            .then(({ main, model }) => {
-                const product = {
-                    id: Date.now(),
-                    name: document.getElementById('productName').value,
-                    description: document.getElementById('productDescription').value,
-                    price: parseInt(document.getElementById('productPrice').value),
-                    oldPrice: document.getElementById('productOldPrice').value ? 
-                        parseInt(document.getElementById('productOldPrice').value) : null,
-                    category: document.getElementById('productCategory').value,
-                    images: [main],
-                    modelImages: this.createModelImages(main, model, document.getElementById('productCategory').value),
-                    sizes: document.getElementById('productSizes').value.split(',').map(s => s.trim()),
-                    colors: document.getElementById('productColors').value.split(',').map(c => c.trim()),
-                    inStock: true,
-                    isNew: document.getElementById('productIsNew')?.checked || false,
-                    isSale: document.getElementById('productIsSale')?.checked || false,
-                    isHot: document.getElementById('productIsHot')?.checked || false,
-                    fitting: this.getFittingConfig(document.getElementById('productCategory').value)
-                };
-
-                const products = Storage.getProducts();
-                products.push(product);
-                Storage.saveProducts(products);
-                
-                this.state.products = products;
-                this.state.filteredProducts = products;
-                this.renderProducts();
-                this.hideProcessingIndicator();
-                this.showAlert('Товар успешно добавлен! Фон автоматически обработан для примерочной!');
-                
-                e.target.reset();
-                this.removeImage();
-                this.removeModelImage();
-            })
-            .catch(error => {
-                this.hideProcessingIndicator();
-                this.showAlert('Ошибка при добавлении товара: ' + error.message);
-            });
-    }
-
-    // Создание изображений для примерочной
-    createModelImages(mainImage, customModelImage, category) {
-        if (customModelImage) {
-            return {
-                female: customModelImage,
-                male: customModelImage
-            };
-        }
-        
-        return {
-            female: mainImage,
-            male: mainImage
-        };
-    }
-
-    getFittingConfig(category) {
-        const configs = {
-            'tops': { type: 'tops', layer: 'top' },
-            'bottoms': { type: 'bottoms', layer: 'bottom' },
-            'dresses': { type: 'dresses', layer: 'dress' },
-            'shoes': { type: 'shoes', layer: 'shoes' }
-        };
-        return configs[category] || { type: category, layer: category };
-    }
-
-    deleteProduct(productId) {
-        if (!confirm('Удалить этот товар?')) return;
-        
-        const products = Storage.getProducts().filter(p => p.id !== productId);
-        Storage.saveProducts(products);
-        
-        this.state.products = products;
-        this.state.filteredProducts = products;
-        this.renderProducts();
-        this.loadAdminProducts();
-        this.showAlert('Товар удален');
     }
 
     // Утилиты
@@ -2251,38 +1195,6 @@ resetFitting() {
             this.tg.showAlert(message);
         } else {
             alert(message);
-        }
-    }
-
-    setupMainButton() {
-        if (this.tg && this.tg.MainButton) {
-            this.tg.MainButton.setText("🛍️ Открыть каталог");
-            this.tg.MainButton.onClick(() => {
-                this.showMainApp();
-            });
-            this.tg.MainButton.show();
-        }
-    }
-
-    // Индикатор обработки
-    showProcessingIndicator() {
-        const overlay = document.createElement('div');
-        overlay.className = 'processing-overlay';
-        overlay.innerHTML = `
-            <div class="processing-content">
-                <div class="processing-spinner"></div>
-                <div class="processing-text">Обрабатываем изображение...</div>
-                <div class="processing-subtext">Удаляем фон и оптимизируем для примерочной</div>
-            </div>
-        `;
-        overlay.id = 'processingOverlay';
-        document.body.appendChild(overlay);
-    }
-
-    hideProcessingIndicator() {
-        const overlay = document.getElementById('processingOverlay');
-        if (overlay) {
-            overlay.remove();
         }
     }
 
@@ -2367,17 +1279,14 @@ document.addEventListener('DOMContentLoaded', () => {
     app = new FashionApp();
 });
 
-// Принудительное скрытие загрузки через 5 секунд на случай ошибки
+// Принудительное скрытие загрузки через 5 секунд
 setTimeout(() => {
     const loading = document.getElementById('loading');
     const mainApp = document.getElementById('main-app');
     
     if (loading && !loading.classList.contains('hidden')) {
-        console.log('Forcing loading screen hide after timeout');
         loading.classList.add('hidden');
-        if (mainApp) {
-            mainApp.classList.remove('hidden');
-        }
+        if (mainApp) mainApp.classList.remove('hidden');
     }
 }, 5000);
 
