@@ -116,6 +116,7 @@ const MODEL_BASES = {
 };
 
 // Простой класс для трансформации одежды
+// Простой класс для трансформации одежды
 class ClothingTransformer {
     constructor(layerElement, layerType) {
         this.layerElement = layerElement;
@@ -282,11 +283,13 @@ class ClothingTransformer {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        // Ограничения перемещения (чтобы не выходило за границы)
-        const maxMove = 80; // Уменьшил границы
+        // УВЕЛИЧЕННЫЕ границы перемещения (почти весь экран примерочной)
+        const maxMoveX = 200;  // Большая область по горизонтали
+        const maxMoveY = 150;  // Большая область по вертикали
+        
         this.scale = Math.max(0.3, Math.min(3, this.scale));
-        this.translateX = Math.max(-maxMove, Math.min(maxMove, this.translateX));
-        this.translateY = Math.max(-maxMove, Math.min(maxMove, this.translateY));
+        this.translateX = Math.max(-maxMoveX, Math.min(maxMoveX, this.translateX));
+        this.translateY = Math.max(-maxMoveY, Math.min(maxMoveY, this.translateY));
 
         image.style.transform = `
             translate(${this.translateX}px, ${this.translateY}px)
