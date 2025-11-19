@@ -117,6 +117,7 @@ const MODEL_BASES = {
 
 // Класс для трансформации одежды
 // Класс для трансформации одежды
+// Класс для трансформации одежды
 class ClothingTransformer {
     constructor(layerElement, layerType) {
         this.layerElement = layerElement;
@@ -128,121 +129,178 @@ class ClothingTransformer {
             rotation: 0
         };
         this.isDragging = false;
-        this.isScaling = false;
-        this.lastTouchDistance = 0;
-        this.startX = 0;
-        this.startY = 0;
-        this.initialX = 0;
-        this.initialY = 0;
         
-        this.initTransformControls();
-        this.activateLayer(); // Активируем слой сразу
+        this.initLayer();
+        this.bindEvents();
     }
 
-    initTransformControls() {
-        if (!this.layerElement) return;
-
-        // Удаляем старые контролы если есть
-        const oldControls = this.layerElement.querySelector('.transform-controls');
-        if (oldControls) {
-            oldControls.remove();
+    initLayer() {
+        // Устанавливаем начальные стили
+        this.layerElement.style.position = 'absolute';
+        this.layerElement.style.top = '0';
+        this.layerElement.style.left = '0';
+        this.layerElement.style.width = '100%';
+        this.layerElement.style.height = '100%';
+        this.layerElement.style.display = 'flex';
+        this.layerElement.style.alignItems = 'center';
+        this.layerElement.style.justifyContent = 'center';
+        this.layerElement.style.zIndex = '10';
+        this.layerElement.style.pointerEvents = 'auto';
+        
+        const image = this.layerElement.querySelector('.clothing-image');
+        if (image) {
+            image.style.pointerEvents = 'auto';
+            image.style.cursor = 'grab';
+            image.style.touchAction = 'none';
+            image.style.userSelect = 'none';
+            image.style.maxWidth = '90%';
+            image.style.maxHeight = '90%';
+            image.style.objectFit = 'contain';
         }
+        
+        this.createControls();
+    }
 
-        // Создаем контролы для трансформации
+    createControls() {
+        // Удаляем старые контролы
+        const oldControls = this.layerElement.querySelector('.transform-controls');
+        if (oldControls) oldControls.remove();
+
         const controls = document.createElement('div');
         controls.className = 'transform-controls';
+        controls.style.cssText = `
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            z-index: 1000;
+            pointer-events: auto;
+        `;
+
         controls.innerHTML = `
-            <div class="control-btn scale-up" title="Увеличить">➕</div>
-            <div class="control-btn scale-down" title="Уменьшить">➖</div>
-            <div class="control-btn rotate-left" title="Повернуть влево">↶</div>
-            <div class="control-btn rotate-right" title="Повернуть вправо">↷</div>
-            <div class="control-btn reset" title="Сбросить">🔄</div>
+            <button class="control-btn" title="Увеличить" style="
+                width: 32px; height: 32px; border-radius: 50%; 
+                background: var(--primary); color: white; border: none; 
+                cursor: pointer; display: flex; align-items: center; 
+                justify-content: center; font-size: 14px;">➕</button>
+            <button class="control-btn" title="Уменьшить" style="
+                width: 32px; height: 32px; border-radius: 50%; 
+                background: var(--primary); color: white; border: none; 
+                cursor: pointer; display: flex; align-items: center; 
+                justify-content: center; font-size: 14px;">➖</button>
+            <button class="control-btn" title="Повернуть влево" style="
+                width: 32px; height: 32px; border-radius: 50%; 
+                background: var(--primary); color: white; border: none; 
+                cursor: pointer; display: flex; align-items: center; 
+                justify-content: center; font-size: 14px;">↶</button>
+            <button class="control-btn" title="Повернуть вправо" style="
+                width: 32px; height: 32px; border-radius: 50%; 
+                background: var(--primary); color: white; border: none; 
+                cursor: pointer; display: flex; align-items: center; 
+                justify-content: center; font-size: 14px;">↷</button>
+            <button class="control-btn" title="Сбросить" style="
+                width: 32px; height: 32px; border-radius: 50%; 
+                background: var(--secondary); color: white; border: none; 
+                cursor: pointer; display: flex; align-items: center; 
+                justify-content: center; font-size: 14px;">🔄</button>
         `;
 
         this.layerElement.appendChild(controls);
-
-        // Добавляем обработчики
         this.bindControlEvents(controls);
-        this.bindDragEvents();
-        this.bindScaleEvents();
-        
-        // Добавляем класс для активации
-        this.layerElement.classList.add('transformable');
-    }
-
-    activateLayer() {
-        // Поднимаем слой наверх
-        this.layerElement.style.zIndex = '100';
-        
-        // Понижаем другие слои
-        document.querySelectorAll('.clothing-layer').forEach(layer => {
-            if (layer !== this.layerElement) {
-                layer.style.zIndex = '1';
-            }
-        });
     }
 
     bindControlEvents(controls) {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        controls.querySelector('.scale-up').addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            this.currentTransform.scale *= 1.2;
-            this.applyTransform();
-        });
-
-        controls.querySelector('.scale-down').addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            this.currentTransform.scale /= 1.2;
-            this.applyTransform();
-        });
-
-        controls.querySelector('.rotate-left').addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            this.currentTransform.rotation -= 15;
-            this.applyTransform();
-        });
-
-        controls.querySelector('.rotate-right').addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            this.currentTransform.rotation += 15;
-            this.applyTransform();
-        });
-
-        controls.querySelector('.reset').addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            this.resetTransform();
+        controls.querySelectorAll('.control-btn').forEach((btn, index) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                switch(index) {
+                    case 0: // Увеличить
+                        this.currentTransform.scale *= 1.2;
+                        break;
+                    case 1: // Уменьшить
+                        this.currentTransform.scale /= 1.2;
+                        break;
+                    case 2: // Повернуть влево
+                        this.currentTransform.rotation -= 15;
+                        break;
+                    case 3: // Повернуть вправо
+                        this.currentTransform.rotation += 15;
+                        break;
+                    case 4: // Сбросить
+                        this.currentTransform = {
+                            scale: 1.0,
+                            translateX: 0,
+                            translateY: 0,
+                            rotation: 0
+                        };
+                        break;
+                }
+                
+                this.applyTransform();
+                this.bringToFront();
+            });
         });
     }
 
-    bindDragEvents() {
+    bindEvents() {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        const startDrag = (clientX, clientY) => {
-            this.isDragging = true;
-            this.startX = clientX;
-            this.startY = clientY;
-            this.initialX = this.currentTransform.translateX;
-            this.initialY = this.currentTransform.translateY;
-            image.style.cursor = 'grabbing';
-            this.layerElement.classList.add('dragging');
-            
-            // Активируем слой при начале перетаскивания
-            this.activateLayer();
-        };
+        // Мышиные события
+        image.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.startDrag(e.clientX, e.clientY);
+            this.bringToFront();
+        });
 
-        const doDrag = (clientX, clientY) => {
+        image.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.bringToFront();
+        });
+
+        // Сенсорные события
+        image.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
+                this.bringToFront();
+            }
+        });
+
+        image.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    }
+
+    startDrag(clientX, clientY) {
+        this.isDragging = true;
+        this.startX = clientX;
+        this.startY = clientY;
+        this.initialX = this.currentTransform.translateX;
+        this.initialY = this.currentTransform.translateY;
+
+        const image = this.layerElement.querySelector('.clothing-image');
+        if (image) image.style.cursor = 'grabbing';
+
+        const onMove = (moveX, moveY) => {
             if (!this.isDragging) return;
             
-            const dx = clientX - this.startX;
-            const dy = clientY - this.startY;
+            const dx = moveX - this.startX;
+            const dy = moveY - this.startY;
             
             this.currentTransform.translateX = this.initialX + dx;
             this.currentTransform.translateY = this.initialY + dy;
@@ -250,110 +308,62 @@ class ClothingTransformer {
             this.applyTransform();
         };
 
-        const endDrag = () => {
+        const onEnd = () => {
             this.isDragging = false;
-            image.style.cursor = 'grab';
-            this.layerElement.classList.remove('dragging');
+            const image = this.layerElement.querySelector('.clothing-image');
+            if (image) image.style.cursor = 'grab';
+            
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onEnd);
         };
 
-        // Мышиные события
-        image.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            startDrag(e.clientX, e.clientY);
-        });
-
-        image.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            this.activateLayer();
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            doDrag(e.clientX, e.clientY);
-        });
-
-        document.addEventListener('mouseup', endDrag);
-
-        // Сенсорные события
-        image.addEventListener('touchstart', (e) => {
+        const onMouseMove = (e) => onMove(e.clientX, e.clientY);
+        const onTouchMove = (e) => {
             if (e.touches.length === 1) {
-                e.preventDefault();
-                e.stopPropagation();
-                startDrag(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        });
-
-        image.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.activateLayer();
-        });
-
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1 && this.isDragging) {
-                e.preventDefault();
-                doDrag(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        });
-
-        document.addEventListener('touchend', endDrag);
-    }
-
-    bindScaleEvents() {
-        const image = this.layerElement.querySelector('.clothing-image');
-        if (!image) return;
-
-        const handleTouchStart = (e) => {
-            if (e.touches.length === 2) {
-                this.isScaling = true;
-                this.lastTouchDistance = this.getTouchDistance(e.touches);
-                e.preventDefault();
-                this.activateLayer();
+                onMove(e.touches[0].clientX, e.touches[0].clientY);
             }
         };
 
-        const handleTouchMove = (e) => {
-            if (e.touches.length === 2 && this.isScaling) {
-                const touchDistance = this.getTouchDistance(e.touches);
-                const scaleChange = touchDistance / this.lastTouchDistance;
-                
-                this.currentTransform.scale *= scaleChange;
-                this.applyTransform();
-                
-                this.lastTouchDistance = touchDistance;
-                e.preventDefault();
-            }
-        };
-
-        const handleTouchEnd = (e) => {
-            if (e.touches.length < 2) {
-                this.isScaling = false;
-            }
-        };
-
-        this.layerElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-        this.layerElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-        this.layerElement.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
     }
 
-    getTouchDistance(touches) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
+bringToFront() {
+    // Поднимаем текущий слой наверх
+    this.layerElement.style.zIndex = '100';
+    
+    // Опускаем все остальные слои
+    const allLayers = document.querySelectorAll('.clothing-layer');
+    allLayers.forEach(layer => {
+        if (layer !== this.layerElement) {
+            layer.style.zIndex = '10';
+        }
+    });
+    
+    // Показываем контролы только у активного слоя
+    const allControls = document.querySelectorAll('.transform-controls');
+    allControls.forEach(controls => {
+        controls.style.display = 'none';
+    });
+    
+    const myControls = this.layerElement.querySelector('.transform-controls');
+    if (myControls) {
+        myControls.style.display = 'flex';
     }
+}
 
     applyTransform() {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        // Ограничиваем масштаб
+        // Ограничиваем значения
         this.currentTransform.scale = Math.max(0.3, Math.min(3, this.currentTransform.scale));
-        
-        // Ограничиваем перемещение
-        const maxMove = 150;
-        this.currentTransform.translateX = Math.max(-maxMove, Math.min(maxMove, this.currentTransform.translateX));
-        this.currentTransform.translateY = Math.max(-maxMove, Math.min(maxMove, this.currentTransform.translateY));
+        this.currentTransform.translateX = Math.max(-150, Math.min(150, this.currentTransform.translateX));
+        this.currentTransform.translateY = Math.max(-150, Math.min(150, this.currentTransform.translateY));
 
         const transform = `
             translate(${this.currentTransform.translateX}px, ${this.currentTransform.translateY}px)
@@ -362,17 +372,6 @@ class ClothingTransformer {
         `;
 
         image.style.transform = transform;
-        image.style.transformOrigin = 'center center';
-    }
-
-    resetTransform() {
-        this.currentTransform = {
-            scale: 1.0,
-            translateX: 0,
-            translateY: 0,
-            rotation: 0
-        };
-        this.applyTransform();
     }
 
     getTransform() {
@@ -385,11 +384,8 @@ class ClothingTransformer {
     }
 
     destroy() {
-        // Очищаем контролы при удалении
         const controls = this.layerElement.querySelector('.transform-controls');
-        if (controls) {
-            controls.remove();
-        }
+        if (controls) controls.remove();
     }
 }
 
@@ -954,6 +950,7 @@ class FashionApp {
             this.initUI();
             this.bindEvents();
             this.initImageUpload();
+            this.bindGlobalEvents();
             this.hideLoading();
             console.log('FashionApp initialized successfully');
         } catch (error) {
@@ -999,6 +996,7 @@ class FashionApp {
                 viewportHeight: window.innerHeight,
                 viewportStableHeight: window.innerHeight
             };
+            
         }
     }
 
@@ -1156,6 +1154,34 @@ class FashionApp {
     });
         
     }
+
+    bindGlobalEvents() {
+    // Глобальный обработчик для активации слоев по клику
+    document.addEventListener('click', (e) => {
+        const clothingImage = e.target.closest('.clothing-image');
+        if (clothingImage) {
+            const layer = clothingImage.closest('.clothing-layer');
+            if (layer) {
+                const layerType = layer.dataset.layerType;
+                if (layerType && this.clothingTransformers[layerType]) {
+                    this.clothingTransformers[layerType].bringToFront();
+                }
+            }
+        }
+        
+        // Также активируем при клике на контролы
+        const controlBtn = e.target.closest('.control-btn');
+        if (controlBtn) {
+            const layer = controlBtn.closest('.clothing-layer');
+            if (layer) {
+                const layerType = layer.dataset.layerType;
+                if (layerType && this.clothingTransformers[layerType]) {
+                    this.clothingTransformers[layerType].bringToFront();
+                }
+            }
+        }
+    });
+}
 
     handleTouchStart(e) {
         if (e.touches.length > 1) {
@@ -1713,6 +1739,7 @@ class FashionApp {
 
     // Обновление отображения модели с трансформациями
 // Обновление отображения модели с трансформациями
+// Обновление отображения модели с трансформациями
 updateModelView() {
     const modelBase = document.getElementById('modelBase');
     const clothingLayers = document.getElementById('clothingLayers');
@@ -1724,6 +1751,7 @@ updateModelView() {
     modelBase.innerHTML = `
         <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
              class="model-base-image"
+             style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-lg);"
              onerror="this.handleModelImageError(this)">
     `;
 
@@ -1744,7 +1772,7 @@ updateModelView() {
         const product = this.state.currentOutfit[layerType];
         if (product) {
             const layer = document.createElement('div');
-            layer.className = `clothing-layer ${layerType}-layer transformable`;
+            layer.className = `clothing-layer ${layerType}-layer`;
             layer.dataset.layerType = layerType;
             
             const modelImage = this.getModelImage(product, layerType);
@@ -1757,10 +1785,8 @@ updateModelView() {
             `;
             clothingLayers.appendChild(layer);
 
-            // Инициализируем трансформатор для каждого слоя отдельно
-            setTimeout(() => {
-                this.clothingTransformers[layerType] = new ClothingTransformer(layer, layerType);
-            }, 100);
+            // Сразу создаем трансформатор
+            this.clothingTransformers[layerType] = new ClothingTransformer(layer, layerType);
         }
     });
 }
