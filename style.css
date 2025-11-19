@@ -2662,3 +2662,179 @@ body {
     -ms-user-select: none;
     user-select: none;
 }
+
+/* Стили для трансформации одежды */
+.clothing-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+    overflow: visible; /* Изменили на visible чтобы не обрезало */
+}
+
+.clothing-image {
+    max-width: 90%; /* Увеличили максимальный размер */
+    max-height: 90%; /* Увеличили максимальный размер */
+    object-fit: contain;
+    cursor: grab;
+    transition: transform 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+.clothing-image:active {
+    cursor: grabbing;
+}
+
+/* Контролы трансформации */
+.simple-controls {
+    position: absolute;
+    top: -50px; /* Немного выше */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px; /* Увеличили расстояние между кнопками */
+    background: rgba(30, 41, 59, 0.95);
+    padding: 8px 12px; /* Увеличили паддинг */
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    pointer-events: auto;
+    display: none;
+}
+
+.control-btn {
+    width: 32px; /* Увеличили размер кнопок */
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px; /* Увеличили шрифт */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.control-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+/* Контейнер модели - УВЕЛИЧИЛИ РАЗМЕР */
+.model-2d-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px; /* Увеличили максимальную ширину */
+    height: 600px; /* Увеличили высоту */
+    margin: 0 auto 20px;
+    border-radius: var(--radius-lg);
+    overflow: visible; /* Изменили на visible */
+    box-shadow: var(--shadow-lg);
+    background: linear-gradient(135deg, #334155, #1e293b);
+    border: 3px solid var(--border);
+}
+
+.model-base {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.model-base-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+}
+
+.clothing-layers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    overflow: visible; /* Изменили на visible */
+}
+
+/* Предотвращение скролла страницы при перетаскивании */
+.fitting-room-overlay {
+    overflow: hidden;
+}
+
+.fitting-room-overlay * {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .simple-controls {
+        top: -45px;
+        padding: 6px 10px;
+    }
+    
+    .control-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .model-2d-container {
+        max-width: 350px; /* Увеличили для мобильных */
+        height: 550px; /* Увеличили для мобильных */
+    }
+}
+
+@media (max-width: 480px) {
+    .model-2d-container {
+        max-width: 320px;
+        height: 500px;
+    }
+}
+
+/* Предотвращение выделения текста при перетаскивании */
+.no-select {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Улучшенные стили для контента примерочной */
+.fitting-view .view-content {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+}
+
+.model-section {
+    margin-bottom: 20px;
+}
+
+.current-outfit {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius);
+}
