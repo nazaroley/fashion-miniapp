@@ -111,13 +111,14 @@ const BASE_PRODUCTS = {
 
 // Базовая модель
 const MODEL_BASES = {
-    female: "female.png",
-    male: "male.png"
+    female: "https://placehold.co/300x500/ffb6c1/ffffff?text=Женская+модель",
+    male: "https://placehold.co/300x500/93c5fd/ffffff?text=Мужская+модель"
 };
 
 // Класс для трансформации одежды
 class ClothingTransformer {
-    constructor(layerType) {
+    constructor(layerElement, layerType) {
+        this.layerElement = layerElement;
         this.layerType = layerType;
         this.currentTransform = {
             scale: 1.0,
@@ -132,10 +133,12 @@ class ClothingTransformer {
         this.startY = 0;
         this.initialX = 0;
         this.initialY = 0;
+        
+        this.initTransformControls();
     }
 
-    initTransformControls(layerElement) {
-        if (!layerElement) return;
+    initTransformControls() {
+        if (!this.layerElement) return;
 
         // Создаем контролы для трансформации
         const controls = document.createElement('div');
@@ -148,53 +151,53 @@ class ClothingTransformer {
             <div class="control-btn reset" title="Сбросить">🔄</div>
         `;
 
-        layerElement.appendChild(controls);
+        this.layerElement.appendChild(controls);
 
         // Добавляем обработчики
-        this.bindControlEvents(controls, layerElement);
-        this.bindDragEvents(layerElement);
-        this.bindScaleEvents(layerElement);
+        this.bindControlEvents(controls);
+        this.bindDragEvents();
+        this.bindScaleEvents();
         
         // Добавляем класс для активации
-        layerElement.classList.add('transformable');
+        this.layerElement.classList.add('transformable');
     }
 
-    bindControlEvents(controls, layerElement) {
-        const image = layerElement.querySelector('.clothing-image');
+    bindControlEvents(controls) {
+        const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
         controls.querySelector('.scale-up').addEventListener('click', (e) => {
             e.stopPropagation();
             this.currentTransform.scale *= 1.2;
-            this.applyTransform(image);
+            this.applyTransform();
         });
 
         controls.querySelector('.scale-down').addEventListener('click', (e) => {
             e.stopPropagation();
             this.currentTransform.scale /= 1.2;
-            this.applyTransform(image);
+            this.applyTransform();
         });
 
         controls.querySelector('.rotate-left').addEventListener('click', (e) => {
             e.stopPropagation();
             this.currentTransform.rotation -= 15;
-            this.applyTransform(image);
+            this.applyTransform();
         });
 
         controls.querySelector('.rotate-right').addEventListener('click', (e) => {
             e.stopPropagation();
             this.currentTransform.rotation += 15;
-            this.applyTransform(image);
+            this.applyTransform();
         });
 
         controls.querySelector('.reset').addEventListener('click', (e) => {
             e.stopPropagation();
-            this.resetTransform(image);
+            this.resetTransform();
         });
     }
 
-    bindDragEvents(layerElement) {
-        const image = layerElement.querySelector('.clothing-image');
+    bindDragEvents() {
+        const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
         const startDrag = (clientX, clientY) => {
@@ -204,7 +207,10 @@ class ClothingTransformer {
             this.initialX = this.currentTransform.translateX;
             this.initialY = this.currentTransform.translateY;
             image.style.cursor = 'grabbing';
-            layerElement.classList.add('dragging');
+            this.layerElement.classList.add('dragging');
+            
+            // Поднимаем слой наверх при перетаскивании
+            this.layerElement.style.zIndex = '100';
         };
 
         const doDrag = (clientX, clientY) => {
@@ -216,13 +222,16 @@ class ClothingTransformer {
             this.currentTransform.translateX = this.initialX + dx;
             this.currentTransform.translateY = this.initialY + dy;
             
-            this.applyTransform(image);
+            this.applyTransform();
         };
 
         const endDrag = () => {
             this.isDragging = false;
             image.style.cursor = 'grab';
-            layerElement.classList.remove('dragging');
+            this.layerElement.classList.remove('dragging');
+            
+            // Возвращаем нормальный z-index
+            this.layerElement.style.zIndex = '';
         };
 
         // Мышиные события
@@ -257,8 +266,8 @@ class ClothingTransformer {
         document.addEventListener('touchend', endDrag);
     }
 
-    bindScaleEvents(layerElement) {
-        const image = layerElement.querySelector('.clothing-image');
+    bindScaleEvents() {
+        const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
         const handleTouchStart = (e) => {
@@ -275,7 +284,7 @@ class ClothingTransformer {
                 const scaleChange = touchDistance / this.lastTouchDistance;
                 
                 this.currentTransform.scale *= scaleChange;
-                this.applyTransform(image);
+                this.applyTransform();
                 
                 this.lastTouchDistance = touchDistance;
                 e.preventDefault();
@@ -288,9 +297,9 @@ class ClothingTransformer {
             }
         };
 
-        layerElement.addEventListener('touchstart', handleTouchStart);
-        layerElement.addEventListener('touchmove', handleTouchMove);
-        layerElement.addEventListener('touchend', handleTouchEnd);
+        this.layerElement.addEventListener('touchstart', handleTouchStart);
+        this.layerElement.addEventListener('touchmove', handleTouchMove);
+        this.layerElement.addEventListener('touchend', handleTouchEnd);
     }
 
     getTouchDistance(touches) {
@@ -299,7 +308,8 @@ class ClothingTransformer {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    applyTransform(image) {
+    applyTransform() {
+        const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
         // Ограничиваем масштаб
@@ -320,14 +330,14 @@ class ClothingTransformer {
         image.style.transformOrigin = 'center center';
     }
 
-    resetTransform(image) {
+    resetTransform() {
         this.currentTransform = {
             scale: 1.0,
             translateX: 0,
             translateY: 0,
             rotation: 0
         };
-        this.applyTransform(image);
+        this.applyTransform();
     }
 
     getTransform() {
@@ -336,6 +346,7 @@ class ClothingTransformer {
 
     setTransform(transform) {
         this.currentTransform = { ...transform };
+        this.applyTransform();
     }
 }
 
@@ -1672,6 +1683,7 @@ class FashionApp {
             if (product) {
                 const layer = document.createElement('div');
                 layer.className = `clothing-layer ${layerType}-layer transformable`;
+                layer.dataset.layerType = layerType;
                 
                 const modelImage = this.getModelImage(product, layerType);
                 
@@ -1683,11 +1695,8 @@ class FashionApp {
                 `;
                 clothingLayers.appendChild(layer);
 
-                // Инициализируем трансформатор для этого слоя
-                this.clothingTransformers[layerType] = new ClothingTransformer(layerType);
-                setTimeout(() => {
-                    this.clothingTransformers[layerType].initTransformControls(layer);
-                }, 100);
+                // Инициализируем трансформатор для каждого слоя отдельно
+                this.clothingTransformers[layerType] = new ClothingTransformer(layer, layerType);
             }
         });
     }
@@ -1832,9 +1841,11 @@ class FashionApp {
             shoes: null
         };
         
-        // Сбрасываем трансформации
+        // Сбрасываем трансформации для всех элементов
         Object.values(this.clothingTransformers || {}).forEach(transformer => {
-            transformer.resetTransform();
+            if (transformer && typeof transformer.resetTransform === 'function') {
+                transformer.resetTransform();
+            }
         });
         
         this.renderSelectedItems();
@@ -1854,10 +1865,10 @@ class FashionApp {
             return;
         }
 
-        // Собираем трансформации
+        // Собираем трансформации для всех элементов
         const transformations = {};
         Object.keys(this.clothingTransformers || {}).forEach(layerType => {
-            if (this.clothingTransformers[layerType]) {
+            if (this.clothingTransformers[layerType] && this.state.currentOutfit[layerType]) {
                 transformations[layerType] = this.clothingTransformers[layerType].getTransform();
             }
         });
@@ -1890,12 +1901,8 @@ class FashionApp {
             this.updateModelView();
             setTimeout(() => {
                 Object.keys(outfit.transformations || {}).forEach(layerType => {
-                    if (this.clothingTransformers[layerType]) {
+                    if (this.clothingTransformers[layerType] && outfit.transformations[layerType]) {
                         this.clothingTransformers[layerType].setTransform(outfit.transformations[layerType]);
-                        const image = document.querySelector(`.${layerType}-layer .clothing-image`);
-                        if (image) {
-                            this.clothingTransformers[layerType].applyTransform(image);
-                        }
                     }
                 });
             }, 200);
