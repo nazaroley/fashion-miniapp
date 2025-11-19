@@ -1,4 +1,4 @@
-// Базовые данные
+// Базовые данны
 const BASE_PRODUCTS = {
     products: [
         {
