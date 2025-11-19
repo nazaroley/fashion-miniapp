@@ -116,6 +116,7 @@ const MODEL_BASES = {
 };
 
 // Класс для трансформации одежды
+// Класс для трансформации одежды
 class ClothingTransformer {
     constructor(layerElement, layerType) {
         this.layerElement = layerElement;
@@ -135,10 +136,17 @@ class ClothingTransformer {
         this.initialY = 0;
         
         this.initTransformControls();
+        this.activateLayer(); // Активируем слой сразу
     }
 
     initTransformControls() {
         if (!this.layerElement) return;
+
+        // Удаляем старые контролы если есть
+        const oldControls = this.layerElement.querySelector('.transform-controls');
+        if (oldControls) {
+            oldControls.remove();
+        }
 
         // Создаем контролы для трансформации
         const controls = document.createElement('div');
@@ -162,36 +170,53 @@ class ClothingTransformer {
         this.layerElement.classList.add('transformable');
     }
 
+    activateLayer() {
+        // Поднимаем слой наверх
+        this.layerElement.style.zIndex = '100';
+        
+        // Понижаем другие слои
+        document.querySelectorAll('.clothing-layer').forEach(layer => {
+            if (layer !== this.layerElement) {
+                layer.style.zIndex = '1';
+            }
+        });
+    }
+
     bindControlEvents(controls) {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
         controls.querySelector('.scale-up').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             this.currentTransform.scale *= 1.2;
             this.applyTransform();
         });
 
         controls.querySelector('.scale-down').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             this.currentTransform.scale /= 1.2;
             this.applyTransform();
         });
 
         controls.querySelector('.rotate-left').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             this.currentTransform.rotation -= 15;
             this.applyTransform();
         });
 
         controls.querySelector('.rotate-right').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             this.currentTransform.rotation += 15;
             this.applyTransform();
         });
 
         controls.querySelector('.reset').addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
             this.resetTransform();
         });
     }
@@ -209,8 +234,8 @@ class ClothingTransformer {
             image.style.cursor = 'grabbing';
             this.layerElement.classList.add('dragging');
             
-            // Поднимаем слой наверх при перетаскивании
-            this.layerElement.style.zIndex = '100';
+            // Активируем слой при начале перетаскивания
+            this.activateLayer();
         };
 
         const doDrag = (clientX, clientY) => {
@@ -229,9 +254,6 @@ class ClothingTransformer {
             this.isDragging = false;
             image.style.cursor = 'grab';
             this.layerElement.classList.remove('dragging');
-            
-            // Возвращаем нормальный z-index
-            this.layerElement.style.zIndex = '';
         };
 
         // Мышиные события
@@ -239,6 +261,12 @@ class ClothingTransformer {
             e.preventDefault();
             e.stopPropagation();
             startDrag(e.clientX, e.clientY);
+        });
+
+        image.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.activateLayer();
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -254,6 +282,12 @@ class ClothingTransformer {
                 e.stopPropagation();
                 startDrag(e.touches[0].clientX, e.touches[0].clientY);
             }
+        });
+
+        image.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.activateLayer();
         });
 
         document.addEventListener('touchmove', (e) => {
@@ -275,6 +309,7 @@ class ClothingTransformer {
                 this.isScaling = true;
                 this.lastTouchDistance = this.getTouchDistance(e.touches);
                 e.preventDefault();
+                this.activateLayer();
             }
         };
 
@@ -297,8 +332,8 @@ class ClothingTransformer {
             }
         };
 
-        this.layerElement.addEventListener('touchstart', handleTouchStart);
-        this.layerElement.addEventListener('touchmove', handleTouchMove);
+        this.layerElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+        this.layerElement.addEventListener('touchmove', handleTouchMove, { passive: false });
         this.layerElement.addEventListener('touchend', handleTouchEnd);
     }
 
@@ -347,6 +382,14 @@ class ClothingTransformer {
     setTransform(transform) {
         this.currentTransform = { ...transform };
         this.applyTransform();
+    }
+
+    destroy() {
+        // Очищаем контролы при удалении
+        const controls = this.layerElement.querySelector('.transform-controls');
+        if (controls) {
+            controls.remove();
+        }
     }
 }
 
