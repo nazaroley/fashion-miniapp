@@ -1145,6 +1145,16 @@ class FashionApp {
         // Предотвращение zoom на мобильных устройствах
         document.addEventListener('touchstart', this.handleTouchStart, { passive: false });
         document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+        document.addEventListener('click', (e) => {
+        const clothingLayer = e.target.closest('.clothing-layer');
+        if (clothingLayer) {
+            const layerType = clothingLayer.dataset.layerType;
+            if (layerType && this.clothingTransformers[layerType]) {
+                this.clothingTransformers[layerType].activateLayer();
+            }
+        }
+    });
+        
     }
 
     handleTouchStart(e) {
@@ -1702,47 +1712,58 @@ class FashionApp {
     }
 
     // Обновление отображения модели с трансформациями
-    updateModelView() {
-        const modelBase = document.getElementById('modelBase');
-        const clothingLayers = document.getElementById('clothingLayers');
-        
-        if (!modelBase || !clothingLayers) return;
+// Обновление отображения модели с трансформациями
+updateModelView() {
+    const modelBase = document.getElementById('modelBase');
+    const clothingLayers = document.getElementById('clothingLayers');
+    
+    if (!modelBase || !clothingLayers) return;
 
-        const baseImage = MODEL_BASES[this.state.currentModel];
-        
-        modelBase.innerHTML = `
-            <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
-                 class="model-base-image"
-                 onerror="this.handleModelImageError(this)">
-        `;
+    const baseImage = MODEL_BASES[this.state.currentModel];
+    
+    modelBase.innerHTML = `
+        <img src="${baseImage}" alt="${this.state.currentModel === 'female' ? 'Женская модель' : 'Мужская модель'}" 
+             class="model-base-image"
+             onerror="this.handleModelImageError(this)">
+    `;
 
-        clothingLayers.innerHTML = '';
+    clothingLayers.innerHTML = '';
 
-        const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
-        this.clothingTransformers = {};
-        
-        layersOrder.forEach(layerType => {
-            const product = this.state.currentOutfit[layerType];
-            if (product) {
-                const layer = document.createElement('div');
-                layer.className = `clothing-layer ${layerType}-layer transformable`;
-                layer.dataset.layerType = layerType;
-                
-                const modelImage = this.getModelImage(product, layerType);
-                
-                layer.innerHTML = `
-                    <img src="${modelImage}" 
-                         alt="${product.name}" 
-                         class="clothing-image ${layerType}-image"
-                         onerror="app.handleClothingImageError(this, '${layerType}')">
-                `;
-                clothingLayers.appendChild(layer);
+    const layersOrder = ['dresses', 'tops', 'bottoms', 'shoes'];
+    
+    // Уничтожаем старые трансформаторы
+    Object.values(this.clothingTransformers || {}).forEach(transformer => {
+        if (transformer && typeof transformer.destroy === 'function') {
+            transformer.destroy();
+        }
+    });
+    
+    this.clothingTransformers = {};
+    
+    layersOrder.forEach(layerType => {
+        const product = this.state.currentOutfit[layerType];
+        if (product) {
+            const layer = document.createElement('div');
+            layer.className = `clothing-layer ${layerType}-layer transformable`;
+            layer.dataset.layerType = layerType;
+            
+            const modelImage = this.getModelImage(product, layerType);
+            
+            layer.innerHTML = `
+                <img src="${modelImage}" 
+                     alt="${product.name}" 
+                     class="clothing-image ${layerType}-image"
+                     onerror="app.handleClothingImageError(this, '${layerType}')">
+            `;
+            clothingLayers.appendChild(layer);
 
-                // Инициализируем трансформатор для каждого слоя отдельно
+            // Инициализируем трансформатор для каждого слоя отдельно
+            setTimeout(() => {
                 this.clothingTransformers[layerType] = new ClothingTransformer(layer, layerType);
-            }
-        });
-    }
+            }, 100);
+        }
+    });
+}
 
     // Обработка ошибок загрузки модели
     handleModelImageError(imgElement) {
@@ -1876,28 +1897,30 @@ class FashionApp {
     }
 
     // Сброс примерки
-    resetFitting() {
-        this.state.currentOutfit = {
-            tops: null,
-            bottoms: null,
-            dresses: null,
-            shoes: null
-        };
-        
-        // Сбрасываем трансформации для всех элементов
-        Object.values(this.clothingTransformers || {}).forEach(transformer => {
-            if (transformer && typeof transformer.resetTransform === 'function') {
-                transformer.resetTransform();
-            }
-        });
-        
-        this.renderSelectedItems();
-        this.renderOutfitItems();
-        this.updateProceedButton();
-        this.updateModelView();
-        
-        this.showAlert('Примерка сброшена');
-    }
+resetFitting() {
+    this.state.currentOutfit = {
+        tops: null,
+        bottoms: null,
+        dresses: null,
+        shoes: null
+    };
+    
+    // Уничтожаем все трансформаторы
+    Object.values(this.clothingTransformers || {}).forEach(transformer => {
+        if (transformer && typeof transformer.destroy === 'function') {
+            transformer.destroy();
+        }
+    });
+    
+    this.clothingTransformers = {};
+    
+    this.renderSelectedItems();
+    this.renderOutfitItems();
+    this.updateProceedButton();
+    this.updateModelView();
+    
+    this.showAlert('Примерка сброшена');
+}
 
     // Сохранение образа с трансформациями
     saveOutfit() {
