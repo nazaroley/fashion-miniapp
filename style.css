@@ -2206,3 +2206,181 @@ body {
         bottom: -25px;
     }
 }
+
+/* Улучшенные стили для трансформируемых слоев */
+.clothing-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.clothing-layer.transformable {
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.clothing-layer.active {
+    z-index: 100 !important;
+}
+
+.clothing-image {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    cursor: grab;
+    transition: transform 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+    pointer-events: auto;
+}
+
+.clothing-image:active {
+    cursor: grabbing;
+}
+
+.clothing-layer.dragging {
+    z-index: 1000 !important;
+}
+
+.clothing-layer.dragging .clothing-image {
+    cursor: grabbing;
+}
+
+/* Улучшенные контролы трансформации */
+.transform-controls {
+    position: absolute;
+    top: -45px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    background: rgba(30, 41, 59, 0.95);
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    box-shadow: var(--shadow);
+    pointer-events: auto;
+}
+
+.control-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    user-select: none;
+    border: none;
+    pointer-events: auto;
+}
+
+.control-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.control-btn.reset {
+    background: var(--secondary);
+}
+
+.control-btn.reset:hover {
+    background: #e67e22;
+}
+
+/* Подсказки для контролов */
+.control-btn {
+    position: relative;
+}
+
+.control-btn::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.control-btn:hover::after {
+    opacity: 1;
+}
+
+/* Контейнер модели */
+.model-2d-container {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    height: 500px;
+    margin: 0 auto 20px;
+    border-radius: var(--radius-lg);
+    overflow: visible;
+    box-shadow: var(--shadow-lg);
+    background: linear-gradient(135deg, #334155, #1e293b);
+    border: 3px solid var(--border);
+}
+
+.clothing-layers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+
+.model-base {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+    .transform-controls {
+        top: -40px;
+        padding: 4px 8px;
+    }
+    
+    .control-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    
+    .control-btn::after {
+        font-size: 10px;
+        bottom: -25px;
+    }
+    
+    .model-2d-container {
+        max-width: 280px;
+        height: 450px;
+    }
+}
