@@ -1214,8 +1214,8 @@ body {
 .model-2d-container {
     position: relative;
     width: 100%;
-    max-width: 300px;
-    height: 500px;
+    max-width: 400px;
+    height: 700px;
     margin: 0 auto 20px;
     border-radius: var(--radius-lg);
     overflow: hidden;
@@ -1267,8 +1267,8 @@ body {
 }
 
 .clothing-image {
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 95%;
+    max-height: 95%;
     object-fit: contain;
     cursor: grab;
     transition: transform 0.1s ease;
@@ -2418,13 +2418,13 @@ body {
 /* Контролы трансформации */
 .simple-controls {
     position: absolute;
-    top: -45px;
+    top: -60px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 6px;
+    gap: 10px;
     background: rgba(30, 41, 59, 0.95);
-    padding: 6px 10px;
+    padding: 10px 15px;
     border-radius: 16px;
     border: 1px solid var(--border);
     backdrop-filter: blur(10px);
@@ -2434,14 +2434,14 @@ body {
 }
 
 .control-btn {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: var(--primary);
     color: white;
     border: none;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2508,7 +2508,7 @@ body {
     
     .model-2d-container {
         max-width: 280px;
-        height: 450px;
+        height: 650px;
     }
 }
 
@@ -2807,7 +2807,7 @@ body {
 @media (max-width: 480px) {
     .model-2d-container {
         max-width: 320px;
-        height: 500px;
+        height: 600px;
     }
 }
 
