@@ -164,6 +164,7 @@ class ClothingTransformer {
         // Биндим события контролов
         controls.querySelectorAll('.control-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 const action = btn.dataset.action;
                 this[action]();
@@ -184,6 +185,10 @@ class ClothingTransformer {
             startY = clientY;
             image.style.cursor = 'grabbing';
             this.activate();
+            
+            // Предотвращаем скролл страницы
+            document.body.style.overflow = 'hidden';
+            document.body.style.touchAction = 'none';
         };
 
         const doDrag = (clientX, clientY) => {
@@ -204,34 +209,44 @@ class ClothingTransformer {
         const endDrag = () => {
             isDragging = false;
             image.style.cursor = 'grab';
+            
+            // Возвращаем скролл страницы
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
         };
 
         // Мышь
         image.addEventListener('mousedown', (e) => {
+            e.preventDefault();
             e.stopPropagation();
             startDrag(e.clientX, e.clientY);
         });
 
-        document.addEventListener('mousemove', (e) => {
+        const handleMouseMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
             doDrag(e.clientX, e.clientY);
-        });
+        };
 
+        document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', endDrag);
 
         // Тач
         image.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
             if (e.touches.length === 1) {
+                e.preventDefault();
+                e.stopPropagation();
                 startDrag(e.touches[0].clientX, e.touches[0].clientY);
             }
         });
 
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) {
-                doDrag(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        });
+        const handleTouchMove = (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            e.preventDefault();
+            doDrag(e.touches[0].clientX, e.touches[0].clientY);
+        };
 
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', endDrag);
 
         // Клик для активации
@@ -267,10 +282,11 @@ class ClothingTransformer {
         const image = this.layerElement.querySelector('.clothing-image');
         if (!image) return;
 
-        // Ограничения
+        // Ограничения перемещения (чтобы не выходило за границы)
+        const maxMove = 80; // Уменьшил границы
         this.scale = Math.max(0.3, Math.min(3, this.scale));
-        this.translateX = Math.max(-100, Math.min(100, this.translateX));
-        this.translateY = Math.max(-100, Math.min(100, this.translateY));
+        this.translateX = Math.max(-maxMove, Math.min(maxMove, this.translateX));
+        this.translateY = Math.max(-maxMove, Math.min(maxMove, this.translateY));
 
         image.style.transform = `
             translate(${this.translateX}px, ${this.translateY}px)
